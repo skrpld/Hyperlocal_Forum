@@ -39,5 +39,9 @@ fun ForumNavGraph(
         ) {
             TODO("Реализовать экран Home")
         }
+
+        composable(route = ForumDestinations.TOPIC_ROUTE) {
+            TODO("Реализовать экран Topic")
+        }
     }
 }
