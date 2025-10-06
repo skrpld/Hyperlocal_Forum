@@ -21,7 +21,7 @@ fun ForumNavGraph(
     coroutineScope: CoroutineScope = rememberCoroutineScope(),
     drawerState: DrawerState = rememberDrawerState(DrawerValue.Closed),
     navController: NavHostController = rememberNavController(),
-    startDestination: String = ForumDestinations.HOME_ROUTE,
+    startDestination: String = ForumDestinations.TOPICS_ROUTE,
     navActions: ForumNavigationActions = remember(navController) {
         ForumNavigationActions(navController)
     }
@@ -35,13 +35,13 @@ fun ForumNavGraph(
         modifier = modifier,
     ) {
         composable(
-            route = ForumDestinations.HOME_ROUTE
+            route = ForumDestinations.TOPICS_ROUTE
         ) {
-            TODO("Реализовать экран Home")
+            TODO("Реализовать экран со списком топиков")
         }
 
-        composable(route = ForumDestinations.TOPIC_ROUTE) {
-            TODO("Реализовать экран Topic")
+        composable(route = ForumDestinations.TOPIC_DETAIL_ROUTE) {
+            TODO("Реализовать экран с деталями топика")
         }
     }
 }
