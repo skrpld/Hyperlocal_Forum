@@ -26,52 +26,57 @@ import androidx.compose.ui.unit.dp
 import com.example.hyperlocal_forum.ui.theme.Hyperlocal_ForumTheme
 
 class MainActivity : ComponentActivity() {
-    @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             Hyperlocal_ForumTheme {
-                Scaffold(
-                    // 1. Верхняя панель
-                    topBar = {
-                        TopAppBar(
-                            title = { Text("Мой Экран") },
-                            navigationIcon = {
-                                IconButton(onClick = { /* Открыть меню */ }) {
-                                    Icon(Icons.Filled.Menu, contentDescription = "Меню")
-                                }
-                            }
-                        )
-                    },
-                    // 2. Плавающая кнопка действия
-                    floatingActionButton = {
-                        FloatingActionButton(onClick = { /* Действие по клику */ }) {
-                            Icon(Icons.Filled.Add, contentDescription = "Добавить")
-                        }
-                    },
-                    // 3. Нижняя панель навигации
-                    bottomBar = {
-                        BottomAppBar {
-                            // Здесь обычно размещают иконки навигации
-                            Text(text = "Нижняя панель")
-                        }
-                    }
-                ) { innerPadding ->
-                    // 4. Основное содержимое экрана
-                    // innerPadding содержит отступы от topBar и bottomBar,
-                    // их нужно применить к корневому элементу контента.
-                    Column(
-                        modifier = Modifier.padding(innerPadding),
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
-                    ) {
-                        Text(
-                            modifier = Modifier.padding(8.dp),
-                            text = "Это основное содержимое экрана."
-                        )
+                MainScreen()
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MainScreen() {
+    Scaffold(
+        // 1. Верхняя панель
+        topBar = {
+            TopAppBar(
+                title = { Text("Мой Экран") },
+                navigationIcon = {
+                    IconButton(onClick = { /* Открыть меню */ }) {
+                        Icon(Icons.Filled.Menu, contentDescription = "Меню")
                     }
                 }
+            )
+        },
+        // 2. Плавающая кнопка действия
+        floatingActionButton = {
+            FloatingActionButton(onClick = { /* Действие по клику */ }) {
+                Icon(Icons.Filled.Add, contentDescription = "Добавить")
             }
+        },
+        // 3. Нижняя панель навигации
+        bottomBar = {
+            BottomAppBar {
+                // Здесь обычно размещают иконки навигации
+                Text(text = "Нижняя панель")
+            }
+        }
+    ) { innerPadding ->
+        // 4. Основное содержимое экрана
+        // innerPadding содержит отступы от topBar и bottomBar,
+        // их нужно применить к корневому элементу контента.
+        Column(
+            modifier = Modifier.padding(innerPadding),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Text(
+                modifier = Modifier.padding(8.dp),
+                text = "Это основное содержимое экрана."
+            )
         }
     }
 }
