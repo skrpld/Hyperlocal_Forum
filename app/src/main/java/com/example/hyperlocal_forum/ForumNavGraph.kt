@@ -13,6 +13,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.hyperlocal_forum.topic.TopicsScreen
 import kotlinx.coroutines.CoroutineScope
 
 @Composable
@@ -37,7 +38,8 @@ fun ForumNavGraph(
         composable(
             route = ForumDestinations.TOPICS_ROUTE
         ) {
-            TODO("Реализовать экран со списком топиков")
+            TopicsScreen(navigateToTopic = { topicId ->
+                navActions.navigateToTopic(topicId) })
         }
 
         composable(route = ForumDestinations.TOPIC_DETAIL_ROUTE) {
