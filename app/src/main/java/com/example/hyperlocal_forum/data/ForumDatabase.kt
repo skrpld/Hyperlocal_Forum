@@ -1,11 +1,11 @@
-package com.example.hyperlocal_forum.data.source.local
+package com.example.hyperlocal_forum.data
 
 import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [LocalTopic::class, LocalComment::class], version = 1)
+@Database(entities = [Topic::class, Comment::class], version = 1)
 abstract class ForumDatabase : RoomDatabase() {
     abstract fun forumDao(): ForumDao
     
