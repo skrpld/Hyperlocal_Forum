@@ -1,6 +1,7 @@
 package com.example.hyperlocal_forum.topic
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.hyperlocal_forum.data.ForumDao
 import com.example.hyperlocal_forum.data.Topic
@@ -23,5 +24,15 @@ class TopicsViewModel constructor(
         viewModelScope.launch {
             _topics.value = forumDao.getAllTopics()
         }
+    }
+}
+
+class TopicsViewModelFactory(private val forumDao: ForumDao) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(TopicsViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return TopicsViewModel(forumDao) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

@@ -5,6 +5,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -21,7 +25,8 @@ import com.example.hyperlocal_forum.data.Topic
 @Composable
 fun TopicsScreen(
     modifier: Modifier = Modifier,
-    navigateToTopic: (Long) -> Unit
+    navigateToTopic: (Long) -> Unit,
+    navigateToCreateTopic: () -> Unit
 ) {
     val context = LocalContext.current
     val forumDao = ForumDatabase.getDatabase(context).forumDao()
@@ -30,7 +35,12 @@ fun TopicsScreen(
     val topics by viewModel.topics.collectAsState()
 
     Scaffold(
-        modifier = modifier.fillMaxSize()
+        modifier = modifier.fillMaxSize(),
+        floatingActionButton = {
+            FloatingActionButton(onClick = navigateToCreateTopic) {
+                Icon(Icons.Default.Add, contentDescription = "Create Topic")
+            }
+        }
     ) {
         TopicList(topics = topics, onTopicClick = navigateToTopic)
     }

@@ -1,4 +1,4 @@
-package com.example.hyperlocal_forum.topic
+package com.example.hyperlocal_forum.topic.detail
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Column
