@@ -4,8 +4,10 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
 
 @Database(entities = [Topic::class, Comment::class], version = 1)
+@TypeConverters(GeoCoordinatesConverter::class)
 abstract class ForumDatabase : RoomDatabase() {
     abstract fun forumDao(): ForumDao
     

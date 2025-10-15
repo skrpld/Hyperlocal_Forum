@@ -6,6 +6,12 @@ import androidx.room.Entity
 data class Topic(
     val id: Long = 0,
     val userId: Long,
+    val location: GeoCoordinates,
     val title: String,
     val content: String
+)
+
+data class GeoCoordinates(
+    val latitude: Double,
+    val longitude: Double
 )
