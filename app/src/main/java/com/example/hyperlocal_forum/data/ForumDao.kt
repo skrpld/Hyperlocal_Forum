@@ -19,5 +19,5 @@ interface ForumDao {
 
     @Transaction
     @Query("SELECT * FROM topics WHERE id = :topicId")
-    suspend fun getTopicWithComments(topicId: Long): TopicWithComments
+    fun getTopicWithComments(topicId: Long): Flow<TopicWithComments>
 }

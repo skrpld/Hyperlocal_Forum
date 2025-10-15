@@ -4,10 +4,7 @@ import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -33,16 +30,16 @@ fun TopicDetailScreen(
     val topicWithComments by viewModel.topicWithComments.collectAsState()
 
     Scaffold(modifier = modifier.fillMaxSize()) {
-        topicWithComments?.let { data ->
-            LazyColumn {
-                item {
-                    TopicHeader(title = data.topic.title, content = data.topic.content)
-                }
-                items(data.comments) { comment ->
-                    ListItem(
-                        headlineContent = { Text(comment.content) }
-                    )
-                }
+            paddingValues ->
+        Column(modifier = Modifier.padding(paddingValues)) {
+            topicWithComments?.let { data ->
+                TopicHeader(title = data.topic.title, content = data.topic.content)
+                Comments(
+                    modifier = Modifier.weight(1f),
+                    topicId = topicId,
+                    forumDao = forumDao,
+                    comments = data.comments
+                )
             }
         }
     }
