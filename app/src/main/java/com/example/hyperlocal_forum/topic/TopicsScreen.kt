@@ -12,16 +12,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.hyperlocal_forum.data.ForumDatabase
 import com.example.hyperlocal_forum.data.Topic
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun TopicsScreen(
     modifier: Modifier = Modifier,
-    viewModel: TopicsViewModel = viewModel(),
     navigateToTopic: (Long) -> Unit
 ) {
+    val context = LocalContext.current
+    val forumDao = ForumDatabase.getDatabase(context).forumDao()
+    val viewModel: TopicsViewModel = viewModel(factory = TopicsViewModelFactory(forumDao))
+
     val topics by viewModel.topics.collectAsState()
 
     Scaffold(
