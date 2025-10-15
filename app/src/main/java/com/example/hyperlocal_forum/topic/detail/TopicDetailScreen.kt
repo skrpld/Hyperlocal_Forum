@@ -12,7 +12,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -29,11 +28,7 @@ fun TopicDetailScreen(
 ) {
     val context = LocalContext.current
     val forumDao = ForumDatabase.getDatabase(context).forumDao()
-    val viewModel: TopicDetailViewModel = viewModel(factory = TopicDetailViewModelFactory(forumDao))
-
-    LaunchedEffect(topicId) {
-        viewModel.loadTopicDetails(topicId)
-    }
+    val viewModel: TopicDetailViewModel = viewModel(factory = TopicDetailViewModelFactory(forumDao, topicId))
 
     val topicWithComments by viewModel.topicWithComments.collectAsState()
 

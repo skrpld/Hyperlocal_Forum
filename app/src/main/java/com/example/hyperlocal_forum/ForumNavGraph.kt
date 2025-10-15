@@ -13,6 +13,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import androidx.navigation.NavType
+import com.example.hyperlocal_forum.topic.detail.TopicDetailScreen
 import com.example.hyperlocal_forum.topic.edit.TopicEditScreen
 import com.example.hyperlocal_forum.topic.TopicsScreen
 import kotlinx.coroutines.CoroutineScope
@@ -45,8 +48,14 @@ fun ForumNavGraph(
             )
         }
 
-        composable(route = ForumDestinations.TOPIC_DETAIL_ROUTE) {
-            TODO("Реализовать экран с деталями топика")
+        composable(
+            route = ForumDestinations.TOPIC_DETAIL_ROUTE,
+            arguments = listOf(navArgument("topicId") { type = NavType.LongType })
+        ) {
+            val topicId = it.arguments?.getLong("topicId")
+            if (topicId != null) {
+                TopicDetailScreen(topicId = topicId)
+            }
         }
         
         composable(route = ForumDestinations.CREATE_TOPIC_ROUTE) {

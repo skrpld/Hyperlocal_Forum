@@ -9,25 +9,33 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-class TopicDetailViewModel constructor(
-    private val forumDao: ForumDao
+class TopicDetailViewModel(
+    private val forumDao: ForumDao,
+    private val topicId: Long
 ) : ViewModel() {
 
     private val _topicWithComments = MutableStateFlow<TopicWithComments?>(null)
     val topicWithComments: StateFlow<TopicWithComments?> = _topicWithComments
 
-    fun loadTopicDetails(topicId: Long) {
+    init {
+        loadTopic()
+    }
+
+    private fun loadTopic() {
         viewModelScope.launch {
             _topicWithComments.value = forumDao.getTopicWithComments(topicId)
         }
     }
 }
 
-class TopicDetailViewModelFactory(private val forumDao: ForumDao) : ViewModelProvider.Factory {
+class TopicDetailViewModelFactory(
+    private val forumDao: ForumDao,
+    private val topicId: Long
+) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(TopicDetailViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return TopicDetailViewModel(forumDao) as T
+            return TopicDetailViewModel(forumDao, topicId) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

@@ -5,26 +5,20 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.hyperlocal_forum.data.ForumDao
 import com.example.hyperlocal_forum.data.Topic
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.stateIn
 
 class TopicsViewModel constructor(
-    private val forumDao: ForumDao
-): ViewModel() {
+    forumDao: ForumDao
+) : ViewModel() {
 
-    private val _topics = MutableStateFlow<List<Topic>>(emptyList())
-    val topics: StateFlow<List<Topic>> = _topics
-
-    init {
-        loadTopics()
-    }
-
-    private fun loadTopics() {
-        viewModelScope.launch {
-            _topics.value = forumDao.getAllTopics()
-        }
-    }
+    val topics: StateFlow<List<Topic>> = forumDao.getAllTopics()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
 }
 
 class TopicsViewModelFactory(private val forumDao: ForumDao) : ViewModelProvider.Factory {
