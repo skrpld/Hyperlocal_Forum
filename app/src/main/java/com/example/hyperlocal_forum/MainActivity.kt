@@ -8,7 +8,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
-import com.example.hyperlocal_forum.ui.auth.AuthScreen
 import com.example.hyperlocal_forum.ui.auth.AuthManager
 import com.example.hyperlocal_forum.data.ForumDatabase
 import com.example.hyperlocal_forum.ui.theme.Hyperlocal_ForumTheme
@@ -24,14 +23,10 @@ class MainActivity : ComponentActivity() {
             val isLoggedIn by authManager.isLoggedIn.collectAsState()
 
             Hyperlocal_ForumTheme {
-                if (isLoggedIn) {
-                    ForumNavGraph(authManager = authManager)
-                } else {
-                    AuthScreen(
-                        authManager = authManager,
-                        onLoginSuccess = { }
-                    )
-                }
+                ForumNavGraph(
+                    isLoggedIn = isLoggedIn,
+                    authManager = authManager
+                )
             }
         }
     }
