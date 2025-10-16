@@ -16,6 +16,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.hyperlocal_forum.data.ForumDatabase
+import com.example.hyperlocal_forum.comment.Comments
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
