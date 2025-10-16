@@ -1,4 +1,4 @@
-package com.example.hyperlocal_forum.profile
+package com.example.hyperlocal_forum.ui.profile
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -25,7 +25,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.hyperlocal_forum.auth.AuthManager
+import com.example.hyperlocal_forum.ui.auth.AuthManager
 import com.example.hyperlocal_forum.data.ForumDatabase
 
 @OptIn(ExperimentalMaterial3Api::class)

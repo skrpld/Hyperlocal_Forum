@@ -1,4 +1,4 @@
-package com.example.hyperlocal_forum.auth
+package com.example.hyperlocal_forum.ui.auth
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions

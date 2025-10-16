@@ -15,11 +15,11 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.NavType
-import com.example.hyperlocal_forum.auth.AuthManager
-import com.example.hyperlocal_forum.profile.ProfileScreen
-import com.example.hyperlocal_forum.topic.detail.TopicDetailScreen
-import com.example.hyperlocal_forum.topic.edit.TopicEditScreen
-import com.example.hyperlocal_forum.topic.TopicsScreen
+import com.example.hyperlocal_forum.ui.auth.AuthManager
+import com.example.hyperlocal_forum.ui.profile.ProfileScreen
+import com.example.hyperlocal_forum.ui.topic.detail.TopicDetailScreen
+import com.example.hyperlocal_forum.ui.topic.edit.TopicEditScreen
+import com.example.hyperlocal_forum.ui.topic.TopicsScreen
 import com.example.hyperlocal_forum.ui.components.AppDrawer
 import kotlinx.coroutines.CoroutineScope
 

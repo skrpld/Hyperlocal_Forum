@@ -1,4 +1,4 @@
-package com.example.hyperlocal_forum.topic.edit
+package com.example.hyperlocal_forum.ui.topic.edit
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider

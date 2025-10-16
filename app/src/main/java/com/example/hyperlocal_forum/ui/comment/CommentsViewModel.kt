@@ -1,4 +1,4 @@
-package com.example.hyperlocal_forum.comment
+package com.example.hyperlocal_forum.ui.comment
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider

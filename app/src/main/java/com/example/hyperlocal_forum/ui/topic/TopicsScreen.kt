@@ -1,4 +1,4 @@
-package com.example.hyperlocal_forum.topic
+package com.example.hyperlocal_forum.ui.topic
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement

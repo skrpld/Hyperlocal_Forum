@@ -1,4 +1,4 @@
-package com.example.hyperlocal_forum.auth
+package com.example.hyperlocal_forum.ui.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider

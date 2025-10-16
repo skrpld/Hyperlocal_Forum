@@ -1,4 +1,4 @@
-package com.example.hyperlocal_forum.topic.edit
+package com.example.hyperlocal_forum.ui.topic.edit
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer

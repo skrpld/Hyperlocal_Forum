@@ -1,4 +1,4 @@
-package com.example.hyperlocal_forum.topic.detail
+package com.example.hyperlocal_forum.ui.topic.detail
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,7 +25,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.hyperlocal_forum.data.ForumDatabase
-import com.example.hyperlocal_forum.comment.Comments
+import com.example.hyperlocal_forum.ui.comment.Comments
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

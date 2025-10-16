@@ -1,4 +1,4 @@
-package com.example.hyperlocal_forum.comment
+package com.example.hyperlocal_forum.ui.comment
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
