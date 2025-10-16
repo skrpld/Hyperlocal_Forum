@@ -6,11 +6,12 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 
-@Database(entities = [Topic::class, Comment::class], version = 1)
+@Database(entities = [Topic::class, Comment::class, User::class], version = 2)
 @TypeConverters(GeoCoordinatesConverter::class)
 abstract class ForumDatabase : RoomDatabase() {
     abstract fun forumDao(): ForumDao
-    
+    abstract fun userDao(): UserDao // Add UserDao
+
     companion object {
         @Volatile
         private var INSTANCE: ForumDatabase? = null
@@ -21,7 +22,9 @@ abstract class ForumDatabase : RoomDatabase() {
                     context.applicationContext,
                     ForumDatabase::class.java,
                     "forum_database"
-                ).build()
+                )
+                .fallbackToDestructiveMigration() //TODO: Remove this in production
+                .build()
                 INSTANCE = instance
                 instance
             }

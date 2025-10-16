@@ -15,9 +15,11 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.NavType
+import com.example.hyperlocal_forum.auth.AuthManager
 import com.example.hyperlocal_forum.topic.detail.TopicDetailScreen
 import com.example.hyperlocal_forum.topic.edit.TopicEditScreen
 import com.example.hyperlocal_forum.topic.TopicsScreen
+import com.example.hyperlocal_forum.ui.components.AppDrawer
 import kotlinx.coroutines.CoroutineScope
 
 @Composable
@@ -29,37 +31,43 @@ fun ForumNavGraph(
     startDestination: String = ForumDestinations.TOPICS_ROUTE,
     navActions: ForumNavigationActions = remember(navController) {
         ForumNavigationActions(navController)
-    }
+    },
+    authManager: AuthManager
 ) {
     val currentNavBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = currentNavBackStackEntry?.destination?.route ?: startDestination
 
-    NavHost(
-        navController = navController,
-        startDestination = startDestination,
-        modifier = modifier,
+    AppDrawer(
+        drawerState = drawerState,
+        onLogout = { authManager.logout() }
     ) {
-        composable(
-            route = ForumDestinations.TOPICS_ROUTE
+        NavHost(
+            navController = navController,
+            startDestination = startDestination,
+            modifier = modifier,
         ) {
-            TopicsScreen(
-                navigateToTopic = { topicId -> navActions.navigateToTopic(topicId) },
-                navigateToCreateTopic = { navActions.navigateToCreateTopic() }
-            )
-        }
-
-        composable(
-            route = ForumDestinations.TOPIC_DETAIL_ROUTE,
-            arguments = listOf(navArgument("topicId") { type = NavType.LongType })
-        ) {
-            val topicId = it.arguments?.getLong("topicId")
-            if (topicId != null) {
-                TopicDetailScreen(topicId = topicId)
+            composable(
+                route = ForumDestinations.TOPICS_ROUTE
+            ) {
+                TopicsScreen(
+                    navigateToTopic = { topicId -> navActions.navigateToTopic(topicId) },
+                    navigateToCreateTopic = { navActions.navigateToCreateTopic() }
+                )
             }
-        }
-        
-        composable(route = ForumDestinations.CREATE_TOPIC_ROUTE) {
-            TopicEditScreen(onTopicSaved = { navController.navigateUp() })
+
+            composable(
+                route = ForumDestinations.TOPIC_DETAIL_ROUTE,
+                arguments = listOf(navArgument("topicId") { type = NavType.LongType })
+            ) {
+                val topicId = it.arguments?.getLong("topicId")
+                if (topicId != null) {
+                    TopicDetailScreen(topicId = topicId)
+                }
+            }
+            
+            composable(route = ForumDestinations.CREATE_TOPIC_ROUTE) {
+                TopicEditScreen(onTopicSaved = { navController.navigateUp() })
+            }
         }
     }
 }
