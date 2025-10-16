@@ -2,14 +2,14 @@ package com.example.hyperlocal_forum.auth
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.example.hyperlocal_forum.data.ForumDao
 import com.example.hyperlocal_forum.data.User
-import com.example.hyperlocal_forum.data.UserDao
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-class AuthManager(context: Context, private val userDao: UserDao) {
+class AuthManager(context: Context, private val forumDao: ForumDao) {
 
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
@@ -27,14 +27,14 @@ class AuthManager(context: Context, private val userDao: UserDao) {
         if (username.isBlank() || password.isBlank()) {
             return@withContext AuthResult.Error("Username and password cannot be empty.")
         }
-        val existingUser = userDao.getUserByUsername(username)
+        val existingUser = forumDao.getUserByUsername(username)
         if (existingUser != null) {
             return@withContext AuthResult.Error("Username already exists.")
         }
 
         val passwordHash = hashPassword(password)
         val newUser = User(username = username, passwordHash = passwordHash)
-        val userId = userDao.insertUser(newUser)
+        val userId = forumDao.insertUser(newUser)
         if (userId > 0) {
             prefs.edit().putBoolean(KEY_IS_LOGGED_IN, true).apply()
             prefs.edit().putString(KEY_USERNAME, username).apply()
@@ -52,7 +52,7 @@ class AuthManager(context: Context, private val userDao: UserDao) {
             return@withContext AuthResult.Error("Username and password cannot be empty.")
         }
         val passwordHash = hashPassword(password)
-        val user = userDao.authenticateUser(username, passwordHash)
+        val user = forumDao.authenticateUser(username, passwordHash)
         if (user != null) {
             prefs.edit().putBoolean(KEY_IS_LOGGED_IN, true).apply()
             prefs.edit().putString(KEY_USERNAME, username).apply()

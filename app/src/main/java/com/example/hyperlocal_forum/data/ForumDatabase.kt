@@ -6,11 +6,10 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 
-@Database(entities = [Topic::class, Comment::class, User::class], version = 2)
-@TypeConverters(GeoCoordinatesConverter::class)
+@Database(entities = [Topic::class, Comment::class, User::class], version = 3, exportSchema = false)
+@TypeConverters(Converters::class)
 abstract class ForumDatabase : RoomDatabase() {
     abstract fun forumDao(): ForumDao
-    abstract fun userDao(): UserDao // Add UserDao
 
     companion object {
         @Volatile

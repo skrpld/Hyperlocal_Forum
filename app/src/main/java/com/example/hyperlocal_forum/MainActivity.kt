@@ -20,14 +20,13 @@ class MainActivity : ComponentActivity() {
         setContent {
             val context = LocalContext.current
             val forumDatabase = remember { ForumDatabase.getDatabase(context) }
-            val authManager = remember { AuthManager(context, forumDatabase.userDao()) }
+            val authManager = remember { AuthManager(context, forumDatabase.forumDao()) }
             val isLoggedIn by authManager.isLoggedIn.collectAsState()
 
             Hyperlocal_ForumTheme {
                 if (isLoggedIn) {
                     ForumNavGraph(authManager = authManager)
-                }
-                else {
+                } else {
                     AuthScreen(
                         authManager = authManager,
                         onLoginSuccess = { }

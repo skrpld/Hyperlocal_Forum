@@ -16,6 +16,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.NavType
 import com.example.hyperlocal_forum.auth.AuthManager
+import com.example.hyperlocal_forum.profile.ProfileScreen
 import com.example.hyperlocal_forum.topic.detail.TopicDetailScreen
 import com.example.hyperlocal_forum.topic.edit.TopicEditScreen
 import com.example.hyperlocal_forum.topic.TopicsScreen
@@ -51,7 +52,8 @@ fun ForumNavGraph(
             ) {
                 TopicsScreen(
                     navigateToTopic = { topicId -> navActions.navigateToTopic(topicId) },
-                    navigateToCreateTopic = { navActions.navigateToCreateTopic() }
+                    navigateToCreateTopic = { navActions.navigateToCreateTopic() },
+                    navigateToProfile = { navActions.navigateToProfile() }
                 )
             }
 
@@ -73,6 +75,10 @@ fun ForumNavGraph(
                     onTopicSaved = { navController.navigateUp() },
                     onBack = { navController.navigateUp() }
                 )
+            }
+
+            composable(route = ForumDestinations.PROFILE_ROUTE) {
+                ProfileScreen(authManager = authManager)
             }
         }
     }

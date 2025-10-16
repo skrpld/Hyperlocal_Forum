@@ -2,10 +2,11 @@ package com.example.hyperlocal_forum.data
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
-import com.example.hyperlocal_forum.data.Topic
 
-@Entity(tableName = "comments",
+@Entity(
+    tableName = "comments",
     foreignKeys = [
         ForeignKey(
             entity = Topic::class,
@@ -13,7 +14,8 @@ import com.example.hyperlocal_forum.data.Topic
             childColumns = ["topicId"],
             onDelete = ForeignKey.CASCADE
         )
-    ]
+    ],
+    indices = [Index(value = ["topicId"])]
 )
 data class Comment(
     @PrimaryKey(autoGenerate = true)
