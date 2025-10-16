@@ -35,7 +35,7 @@ class AuthViewModel(private val authManager: AuthManager) : ViewModel() {
         _message.value = null
     }
 
-    fun authenticate(onLoginSuccess: (String) -> Unit) {
+    fun authenticate(onLoginSuccess: () -> Unit) {
         viewModelScope.launch {
             _message.value = null
             val result = if (_isLoginMode.value) {
@@ -47,7 +47,7 @@ class AuthViewModel(private val authManager: AuthManager) : ViewModel() {
             when (result) {
                 is AuthResult.Success -> {
                     _message.value = result.message
-                    onLoginSuccess(_username.value)
+                    onLoginSuccess()
                 }
                 is AuthResult.Error -> {
                     _message.value = result.message

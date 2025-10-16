@@ -17,28 +17,26 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.hyperlocal_forum.data.ForumDatabase
+
 
 @Composable
 fun AuthScreen(
+    authManager: AuthManager,
     modifier: Modifier = Modifier,
-    onLoginSuccess: (String) -> Unit
+    onLoginSuccess: () -> Unit
 ) {
-    val context = LocalContext.current
-    val forumDatabase = ForumDatabase.getDatabase(context)
-    val authManager = remember(context) { AuthManager(context, forumDatabase.userDao()) }
     val authViewModel: AuthViewModel = viewModel(factory = AuthViewModelFactory(authManager))
 
     val username by authViewModel.username.collectAsState()
     val password by authViewModel.password.collectAsState()
     val isLoginMode by authViewModel.isLoginMode.collectAsState()
     val message by authViewModel.message.collectAsState()
+    val context = LocalContext.current
 
     LaunchedEffect(message) {
         message?.let { msg ->
