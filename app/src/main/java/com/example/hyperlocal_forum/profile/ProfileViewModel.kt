@@ -30,7 +30,6 @@ class ProfileViewModel(
     fun updatePassword(password: String) {
         viewModelScope.launch {
             user.value?.let { currentUser ->
-                // In a real app, you would hash the password before saving it.
                 forumDao.updateUser(currentUser.copy(passwordHash = password.hashCode().toString()))
             }
         }
