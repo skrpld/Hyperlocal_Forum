@@ -24,6 +24,28 @@ class TopicDetailViewModel(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = null
         )
+
+    private val _newComment = MutableStateFlow("")
+    val newComment: StateFlow<String> = _newComment.asStateFlow()
+
+    fun onNewCommentChange(comment: String) {
+        _newComment.value = comment
+    }
+
+    fun addComment() {
+        if (_newComment.value.isBlank()) {
+            return
+        }
+        viewModelScope.launch {
+            val comment = Comment(
+                topicId = topicId,
+                userId = 0, // TODO: Get actual user ID
+                content = _newComment.value
+            )
+            forumDao.insertComment(comment)
+            _newComment.value = ""
+        }
+    }
 }
 
 class TopicDetailViewModelFactory(

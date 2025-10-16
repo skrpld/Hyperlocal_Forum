@@ -22,6 +22,9 @@ class AuthViewModel(private val authManager: AuthManager) : ViewModel() {
     private val _message = MutableStateFlow<String?>(null)
     val message: StateFlow<String?> = _message.asStateFlow()
 
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
     fun onUsernameChange(newUsername: String) {
         _username.value = newUsername
     }
@@ -37,6 +40,7 @@ class AuthViewModel(private val authManager: AuthManager) : ViewModel() {
 
     fun authenticate(onLoginSuccess: () -> Unit) {
         viewModelScope.launch {
+            _isLoading.value = true
             _message.value = null
             val result = if (_isLoginMode.value) {
                 authManager.login(_username.value, _password.value)
@@ -53,6 +57,7 @@ class AuthViewModel(private val authManager: AuthManager) : ViewModel() {
                     _message.value = result.message
                 }
             }
+            _isLoading.value = false
         }
     }
 

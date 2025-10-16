@@ -61,12 +61,18 @@ fun ForumNavGraph(
             ) {
                 val topicId = it.arguments?.getLong("topicId")
                 if (topicId != null) {
-                    TopicDetailScreen(topicId = topicId)
+                    TopicDetailScreen(
+                        topicId = topicId,
+                        onBack = { navController.navigateUp() }
+                    )
                 }
             }
             
             composable(route = ForumDestinations.CREATE_TOPIC_ROUTE) {
-                TopicEditScreen(onTopicSaved = { navController.navigateUp() })
+                TopicEditScreen(
+                    onTopicSaved = { navController.navigateUp() },
+                    onBack = { navController.navigateUp() }
+                )
             }
         }
     }
