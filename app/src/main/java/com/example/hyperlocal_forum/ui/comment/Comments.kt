@@ -14,7 +14,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -24,20 +23,21 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.hyperlocal_forum.data.Comment
 import com.example.hyperlocal_forum.data.ForumDao
+import com.example.hyperlocal_forum.ui.auth.AuthManager
 
 @Composable
 fun Comments(
     modifier: Modifier = Modifier,
     topicId: Long,
     forumDao: ForumDao,
-    comments: List<Comment>
+    comments: List<Comment>,
+    authManager: AuthManager
 ) {
-    val commentsViewModel: CommentsViewModel = viewModel(factory = CommentsViewModelFactory(forumDao, topicId))
+    val commentsViewModel: CommentsViewModel = viewModel(factory = CommentsViewModelFactory(forumDao, topicId, authManager))
     val showCommentInput by commentsViewModel.showCommentInput.collectAsState()
     val newCommentContent by commentsViewModel.newCommentContent.collectAsState()
 
@@ -58,7 +58,7 @@ fun Comments(
                         .padding(start = 8.dp, end = 8.dp, bottom = 8.dp)
                 ) {
                     Text(
-                        text = comment.content,
+                        text = "${comment.username}: ${comment.content}",
                         modifier = Modifier.padding(8.dp))
                 }
             }

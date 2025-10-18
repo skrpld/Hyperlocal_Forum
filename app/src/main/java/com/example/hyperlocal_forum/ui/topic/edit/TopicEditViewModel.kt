@@ -6,12 +6,16 @@ import androidx.lifecycle.viewModelScope
 import com.example.hyperlocal_forum.data.ForumDao
 import com.example.hyperlocal_forum.data.GeoCoordinates
 import com.example.hyperlocal_forum.data.Topic
+import com.example.hyperlocal_forum.ui.auth.AuthManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class TopicEditViewModel(private val forumDao: ForumDao) : ViewModel() {
+class TopicEditViewModel(
+    private val forumDao: ForumDao,
+    private val authManager: AuthManager
+) : ViewModel() {
 
     private val _title = MutableStateFlow("")
     val title: StateFlow<String> = _title.asStateFlow()
@@ -37,7 +41,7 @@ class TopicEditViewModel(private val forumDao: ForumDao) : ViewModel() {
         viewModelScope.launch {
             _isSaving.value = true
             forumDao.insertTopic(Topic(
-                userId = 0, //TODO("get user id")
+                userId = authManager.currentUserId.value,
                 location = GeoCoordinates(0.0, 0.0),    //TODO("get location")
                 title = _title.value,
                 content = _content.value
@@ -48,11 +52,14 @@ class TopicEditViewModel(private val forumDao: ForumDao) : ViewModel() {
     }
 }
 
-class TopicEditViewModelFactory(private val forumDao: ForumDao) : ViewModelProvider.Factory {
+class TopicEditViewModelFactory(
+    private val forumDao: ForumDao,
+    private val authManager: AuthManager
+    ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(TopicEditViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return TopicEditViewModel(forumDao) as T
+            return TopicEditViewModel(forumDao, authManager) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

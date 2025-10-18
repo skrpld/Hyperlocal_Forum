@@ -27,6 +27,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.hyperlocal_forum.data.ForumDatabase
+import com.example.hyperlocal_forum.ui.auth.AuthManager
 import com.example.hyperlocal_forum.ui.comment.Comments
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -38,6 +39,7 @@ fun TopicDetailScreen(
 ) {
     val context = LocalContext.current
     val forumDao = ForumDatabase.getDatabase(context).forumDao()
+    val authManager = AuthManager(context, forumDao)
     val viewModel: TopicDetailViewModel = viewModel(factory = TopicDetailViewModelFactory(forumDao, topicId))
 
     val topicDetailState by viewModel.topicDetailState.collectAsState()
@@ -69,7 +71,8 @@ fun TopicDetailScreen(
                     Comments(
                         topicId = data.topicWithComments.topic.id,
                         forumDao = forumDao,
-                        comments = data.topicWithComments.comments)
+                        comments = data.topicWithComments.comments,
+                        authManager = authManager)
                 }
             } ?: Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()

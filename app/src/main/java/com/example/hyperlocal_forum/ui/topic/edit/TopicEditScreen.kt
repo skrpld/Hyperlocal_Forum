@@ -29,6 +29,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.hyperlocal_forum.data.ForumDatabase
+import com.example.hyperlocal_forum.ui.auth.AuthManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,7 +40,8 @@ fun TopicEditScreen(
 ) {
     val context = LocalContext.current
     val forumDao = ForumDatabase.getDatabase(context).forumDao()
-    val viewModel: TopicEditViewModel = viewModel(factory = TopicEditViewModelFactory(forumDao))
+    val authManager = AuthManager(context, forumDao)
+    val viewModel: TopicEditViewModel = viewModel(factory = TopicEditViewModelFactory(forumDao, authManager))
 
     val title by viewModel.title.collectAsState()
     val content by viewModel.content.collectAsState()

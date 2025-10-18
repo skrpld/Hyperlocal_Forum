@@ -5,14 +5,17 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.hyperlocal_forum.data.Comment
 import com.example.hyperlocal_forum.data.ForumDao
+import com.example.hyperlocal_forum.ui.auth.AuthManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class CommentsViewModel(
     private val forumDao: ForumDao,
-    private val topicId: Long
+    private val topicId: Long,
+    private val authManager: AuthManager
 ) : ViewModel() {
 
     private val _comments = MutableStateFlow<List<Comment>>(emptyList())
@@ -50,11 +53,14 @@ class CommentsViewModel(
     fun saveComment() {
         viewModelScope.launch {
             if (_newCommentContent.value.isNotBlank()) {
-                // TODO: Replace 0L with actual userId from the logged-in user session
-                val newComment = Comment(userId = 0L, topicId = topicId, content = _newCommentContent.value)
-                forumDao.insertComment(newComment)
-                _newCommentContent.value = ""
-                _showCommentInput.value = false
+                val userId = authManager.currentUserId.first()
+                if (userId != -1L) {
+                    val user = forumDao.getUser(userId).first()
+                    val newComment = Comment(userId = userId, topicId = topicId, content = _newCommentContent.value, username = user.username)
+                    forumDao.insertComment(newComment)
+                    _newCommentContent.value = ""
+                    _showCommentInput.value = false
+                }
             }
         }
     }
@@ -62,12 +68,13 @@ class CommentsViewModel(
 
 class CommentsViewModelFactory(
     private val forumDao: ForumDao,
-    private val topicId: Long
+    private val topicId: Long,
+    private val authManager: AuthManager
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(CommentsViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return CommentsViewModel(forumDao, topicId) as T
+            return CommentsViewModel(forumDao, topicId, authManager) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

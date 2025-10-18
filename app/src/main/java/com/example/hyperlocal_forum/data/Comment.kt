@@ -22,5 +22,6 @@ data class Comment(
     val id: Long = 0,
     val userId: Long,
     val topicId: Long,
-    val content: String
+    val content: String,
+    val username: String
 )
