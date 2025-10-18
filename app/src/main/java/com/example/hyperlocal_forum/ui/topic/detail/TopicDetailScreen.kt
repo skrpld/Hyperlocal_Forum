@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -22,6 +23,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.hyperlocal_forum.data.ForumDatabase
@@ -38,13 +40,13 @@ fun TopicDetailScreen(
     val forumDao = ForumDatabase.getDatabase(context).forumDao()
     val viewModel: TopicDetailViewModel = viewModel(factory = TopicDetailViewModelFactory(forumDao, topicId))
 
-    val topicWithComments by viewModel.topicWithComments.collectAsState()
+    val topicDetailState by viewModel.topicDetailState.collectAsState()
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text(topicWithComments?.topic?.title ?: "") },
+                title = { Text("by ${topicDetailState?.author?.username ?: ""}") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
@@ -53,18 +55,22 @@ fun TopicDetailScreen(
             )
         }
     ) { paddingValues ->
-        Box(modifier = Modifier.padding(paddingValues).fillMaxSize()) {
-            topicWithComments?.let { data ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+            topicDetailState?.let { data ->
                 Column(modifier = Modifier.fillMaxSize()) {
-                    TopicHeader(content = data.topic.content)
-                    Comments(
-                        modifier = Modifier.weight(1f),
-                        topicId = topicId,
-                        forumDao = forumDao,
-                        comments = data.comments
+                    TopicHeader(
+                        title = data.topicWithComments.topic.title,
+                        content = data.topicWithComments.topic.content
                     )
+                    Comments(
+                        topicId = data.topicWithComments.topic.id,
+                        forumDao = forumDao,
+                        comments = data.topicWithComments.comments)
                 }
-
             } ?: Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
@@ -73,12 +79,38 @@ fun TopicDetailScreen(
 }
 
 @Composable
-private fun TopicHeader(content: String) {
+private fun TopicHeader(title: String, content: String) {
     Card(
-        modifier = Modifier.fillMaxWidth().padding(16.dp)
+        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.primary),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = content, style = MaterialTheme.typography.bodyLarge)
+        Text(
+            text = title,
+            style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier.padding(8.dp))
+        Card(
+            colors = CardDefaults.cardColors(MaterialTheme.colorScheme.secondary),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+        ) {
+            Text(
+                text = content,
+                modifier = Modifier.padding(8.dp))
         }
     }
+}
+
+@Preview
+@Composable
+fun TopicDetailScreenPreview() {
+    TopicDetailScreen(topicId = 1, onBack = {})
+}
+
+@Preview
+@Composable
+fun TopicHeaderPreview() {
+    TopicHeader(title = "This is a sample topic title", content = "This is a sample topic content.")
 }

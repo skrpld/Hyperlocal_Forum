@@ -6,46 +6,32 @@ import androidx.lifecycle.viewModelScope
 import com.example.hyperlocal_forum.data.Comment
 import com.example.hyperlocal_forum.data.ForumDao
 import com.example.hyperlocal_forum.data.TopicWithComments
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import com.example.hyperlocal_forum.data.User
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+
+data class TopicDetailState(
+    val topicWithComments: TopicWithComments,
+    val author: User
+)
 
 class TopicDetailViewModel(
     private val forumDao: ForumDao,
     private val topicId: Long
 ) : ViewModel() {
 
-    val topicWithComments: StateFlow<TopicWithComments?> = forumDao.getTopicWithComments(topicId)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = null
-        )
-
-    private val _newComment = MutableStateFlow("")
-    val newComment: StateFlow<String> = _newComment.asStateFlow()
-
-    fun onNewCommentChange(comment: String) {
-        _newComment.value = comment
-    }
-
-    fun addComment() {
-        if (_newComment.value.isBlank()) {
-            return
-        }
-        viewModelScope.launch {
-            val comment = Comment(
-                topicId = topicId,
-                userId = 0, // TODO: Get actual user ID
-                content = _newComment.value
+    val topicDetailState: StateFlow<TopicDetailState?> =
+        forumDao.getTopicWithComments(topicId)
+            .combine(forumDao.getUser(topicId)) { topicWithComments, user ->
+                TopicDetailState(topicWithComments, user)
+            }.stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = null
             )
-            forumDao.insertComment(comment)
-            _newComment.value = ""
-        }
-    }
 }
 
 class TopicDetailViewModelFactory(

@@ -4,13 +4,18 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -27,8 +32,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.hyperlocal_forum.data.ForumDatabase
+import com.example.hyperlocal_forum.data.GeoCoordinates
 import com.example.hyperlocal_forum.data.Topic
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -95,12 +103,38 @@ fun TopicList(
     } else {
         LazyColumn(modifier = modifier) {
             items(topics) { topic ->
-                ListItem(
-                    headlineContent = { Text(topic.title) },
-                    modifier = Modifier.clickable { onTopicClick(topic.id) }
-                )
-                Divider()
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 8.dp, end = 8.dp, bottom = 8.dp)
+                        .clickable {onTopicClick(topic.id)}
+                ) {
+                    Text(
+                        text = topic.title,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
             }
         }
     }
 }
+
+@Preview
+@Composable
+fun TopicsScreenPreview() {
+    TopicsScreen(navigateToTopic = {}, navigateToCreateTopic = {}, navigateToProfile = {})
+}
+
+@Preview
+@Composable
+fun TopicListPreview() {
+    TopicList(
+        topics = listOf(
+            Topic(1, 1, GeoCoordinates(0.0, 0.0), "Topic 1", "Description 1"),
+            Topic(2, 1, GeoCoordinates(0.0, 0.0), "Topic 2", "Description 2")
+        ),
+        onTopicClick = {}
+    )
+}
+
+
