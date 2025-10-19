@@ -4,12 +4,17 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.example.hyperlocal_forum.data.ForumDao
 import com.example.hyperlocal_forum.data.User
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.withContext
 
-class AuthManager(context: Context, private val forumDao: ForumDao) {
+class AuthManager(
+    context: Context,
+    private val forumDao: ForumDao,
+    private val dispatcher: CoroutineDispatcher = Dispatchers.IO
+) {
 
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
@@ -23,7 +28,7 @@ class AuthManager(context: Context, private val forumDao: ForumDao) {
         return password.hashCode().toString()  //TODO: Replace with actual hashing algorithm
     }
 
-    suspend fun register(username: String, password: String): AuthResult = withContext(Dispatchers.IO) {
+    suspend fun register(username: String, password: String): AuthResult = withContext(dispatcher) {
         if (username.isBlank() || password.isBlank()) {
             return@withContext AuthResult.Error("Username and password cannot be empty.")
         }
@@ -47,7 +52,7 @@ class AuthManager(context: Context, private val forumDao: ForumDao) {
         }
     }
 
-    suspend fun login(username: String, password: String): AuthResult = withContext(Dispatchers.IO) {
+    suspend fun login(username: String, password: String): AuthResult = withContext(dispatcher) {
         if (username.isBlank() || password.isBlank()) {
             return@withContext AuthResult.Error("Username and password cannot be empty.")
         }

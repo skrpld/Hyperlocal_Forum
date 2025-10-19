@@ -6,6 +6,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -41,7 +42,7 @@ fun AuthScreen(
             snackbarHost = { SnackbarHost(snackbarHostState) },
             topBar = {
                 TopAppBar(
-                    title = { Text(if (isLoginMode) "Login" else "Register") }
+                    title = { Text(if (isLoginMode) "Login" else "Register", modifier = Modifier.testTag("AuthScreen_Title")) }
                 )
             },
             modifier = modifier.fillMaxSize()
@@ -66,7 +67,7 @@ fun AuthScreen(
                             value = username,
                             onValueChange = { authViewModel.onUsernameChange(it) },
                             label = { Text("Username") },
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier.fillMaxWidth().testTag("AuthScreen_Username"),
                             enabled = !isLoading
                         )
                         Spacer(modifier = Modifier.height(8.dp))
@@ -74,7 +75,7 @@ fun AuthScreen(
                             value = password,
                             onValueChange = { authViewModel.onPasswordChange(it) },
                             label = { Text("Password") },
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier.fillMaxWidth().testTag("AuthScreen_Password"),
                             visualTransformation = PasswordVisualTransformation(),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                             enabled = !isLoading
@@ -82,7 +83,7 @@ fun AuthScreen(
                         Spacer(modifier = Modifier.height(16.dp))
                         Button(
                             onClick = { authViewModel.authenticate(onLoginSuccess) },
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier.fillMaxWidth().testTag(if (isLoginMode) "AuthScreen_LoginButton" else "AuthScreen_RegisterButton"),
                             enabled = !isLoading
                         ) {
                             if (isLoading) {
@@ -101,6 +102,7 @@ fun AuthScreen(
 
                 TextButton(
                     onClick = { authViewModel.toggleLoginMode() },
+                    modifier = Modifier.testTag("AuthScreen_ToggleModeButton"),
                     enabled = !isLoading
                 ) {
                     Text(if (isLoginMode) "Don't have an account? Register" else "Already have an account? Login")
