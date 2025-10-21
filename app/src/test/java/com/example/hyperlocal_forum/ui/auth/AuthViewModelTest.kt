@@ -110,6 +110,7 @@ class AuthViewModelTest {
         authViewModel.toggleLoginMode()
         authViewModel.onUsernameChange(username)
         authViewModel.onPasswordChange(password)
+        authViewModel.onConfirmPasswordChange(password)
         authViewModel.authenticate {}
 
         assertEquals("Registration successful!", authViewModel.message.value)
@@ -125,6 +126,7 @@ class AuthViewModelTest {
         authViewModel.toggleLoginMode()
         authViewModel.onUsernameChange(username)
         authViewModel.onPasswordChange(password)
+        authViewModel.onConfirmPasswordChange(password)
         authViewModel.authenticate {}
 
         assertEquals("Username already exists.", authViewModel.message.value)
@@ -135,9 +137,21 @@ class AuthViewModelTest {
         authViewModel.toggleLoginMode()
         authViewModel.onUsernameChange("")
         authViewModel.onPasswordChange("")
+        authViewModel.onConfirmPasswordChange("")
         authViewModel.authenticate {}
 
         assertEquals("Username and password cannot be empty.", authViewModel.message.value)
+    }
+
+    @Test
+    fun `test registration failure passwords do not match`() = runTest {
+        authViewModel.toggleLoginMode()
+        authViewModel.onUsernameChange("user")
+        authViewModel.onPasswordChange("password")
+        authViewModel.onConfirmPasswordChange("differentpassword")
+        authViewModel.authenticate { }
+
+        assertEquals("Passwords do not match", authViewModel.message.value)
     }
 
     @Test

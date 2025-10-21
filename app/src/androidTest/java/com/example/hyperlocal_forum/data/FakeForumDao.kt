@@ -8,6 +8,11 @@ class FakeForumDao : ForumDao {
     private val topics = mutableListOf<Topic>()
     private val comments = mutableListOf<Comment>()
 
+    fun initUsers(initialUsers: List<User>) {
+        users.clear()
+        users.addAll(initialUsers)
+    }
+
     override suspend fun insertTopic(topic: Topic): Long {
         topics.add(topic)
         return topics.size.toLong()
@@ -50,7 +55,8 @@ class FakeForumDao : ForumDao {
     }
 
     override suspend fun insertUser(user: User): Long {
-        users.add(user)
-        return users.size.toLong()
+        val newId = (users.maxOfOrNull { it.id } ?: 0L) + 1
+        users.add(user.copy(id = newId))
+        return newId
     }
 }
