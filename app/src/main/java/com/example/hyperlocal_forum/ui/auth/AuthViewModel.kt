@@ -16,6 +16,9 @@ class AuthViewModel(private val authManager: AuthManager) : ViewModel() {
     private val _password = MutableStateFlow("")
     val password: StateFlow<String> = _password.asStateFlow()
 
+    private val _confirmPassword = MutableStateFlow("")
+    val confirmPassword: StateFlow<String> = _confirmPassword.asStateFlow()
+
     private val _isLoginMode = MutableStateFlow(true)
     val isLoginMode: StateFlow<Boolean> = _isLoginMode.asStateFlow()
 
@@ -33,12 +36,20 @@ class AuthViewModel(private val authManager: AuthManager) : ViewModel() {
         _password.value = newPassword
     }
 
+    fun onConfirmPasswordChange(newConfirmPassword: String) {
+        _confirmPassword.value = newConfirmPassword
+    }
+
     fun toggleLoginMode() {
         _isLoginMode.value = !_isLoginMode.value
         _message.value = null
     }
 
     fun authenticate(onLoginSuccess: () -> Unit) {
+        if (!_isLoginMode.value && _password.value != _confirmPassword.value) {
+            _message.value = "Passwords do not match"
+            return
+        }
         viewModelScope.launch {
             _isLoading.value = true
             _message.value = null

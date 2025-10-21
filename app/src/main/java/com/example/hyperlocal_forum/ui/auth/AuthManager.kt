@@ -41,9 +41,9 @@ class AuthManager(
         val newUser = User(username = username, passwordHash = passwordHash)
         val userId = forumDao.insertUser(newUser)
         if (userId > 0) {
-            prefs.edit().putBoolean(KEY_IS_LOGGED_IN, true).apply()
-            prefs.edit().putString(KEY_USERNAME, username).apply()
-            prefs.edit().putLong(KEY_USER_ID, userId).apply()
+            prefs.edit().putBoolean(KEY_IS_LOGGED_IN, true).commit()
+            prefs.edit().putString(KEY_USERNAME, username).commit()
+            prefs.edit().putLong(KEY_USER_ID, userId).commit()
             _isLoggedIn.value = true
             _currentUserId.value = userId
             AuthResult.Success("Registration successful!")
@@ -59,9 +59,9 @@ class AuthManager(
         val passwordHash = hashPassword(password)
         val user = forumDao.authenticateUser(username, passwordHash)
         if (user != null) {
-            prefs.edit().putBoolean(KEY_IS_LOGGED_IN, true).apply()
-            prefs.edit().putString(KEY_USERNAME, username).apply()
-            prefs.edit().putLong(KEY_USER_ID, user.id).apply()
+            prefs.edit().putBoolean(KEY_IS_LOGGED_IN, true).commit()
+            prefs.edit().putString(KEY_USERNAME, username).commit()
+            prefs.edit().putLong(KEY_USER_ID, user.id).commit()
             _isLoggedIn.value = true
             _currentUserId.value = user.id
             AuthResult.Success("Login successful!")
@@ -71,7 +71,7 @@ class AuthManager(
     }
 
     fun logout() {
-        prefs.edit().clear().apply()
+        prefs.edit().clear().commit()
         _isLoggedIn.value = false
         _currentUserId.value = -1L
     }

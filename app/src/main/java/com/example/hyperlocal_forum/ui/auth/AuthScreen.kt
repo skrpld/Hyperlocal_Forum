@@ -25,6 +25,7 @@ fun AuthScreen(
 
         val username by authViewModel.username.collectAsState()
         val password by authViewModel.password.collectAsState()
+        val confirmPassword by authViewModel.confirmPassword.collectAsState()
         val isLoginMode by authViewModel.isLoginMode.collectAsState()
         val message by authViewModel.message.collectAsState()
         val isLoading by authViewModel.isLoading.collectAsState()
@@ -80,6 +81,18 @@ fun AuthScreen(
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                             enabled = !isLoading
                         )
+                        if (!isLoginMode) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            OutlinedTextField(
+                                value = confirmPassword,
+                                onValueChange = { authViewModel.onConfirmPasswordChange(it) },
+                                label = { Text("Confirm Password") },
+                                modifier = Modifier.fillMaxWidth().testTag("AuthScreen_ConfirmPassword"),
+                                visualTransformation = PasswordVisualTransformation(),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                                enabled = !isLoading
+                            )
+                        }
                         Spacer(modifier = Modifier.height(16.dp))
                         Button(
                             onClick = { authViewModel.authenticate(onLoginSuccess) },
