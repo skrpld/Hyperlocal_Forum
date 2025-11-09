@@ -7,7 +7,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import com.example.hyperlocal_forum.ui.theme.Hyperlocal_ForumTheme
-import com.example.hyperlocal_forum.utils.AuthManager
+import com.example.hyperlocal_forum.data.AuthManager
+import com.example.hyperlocal_forum.ui.navigation.ForumNavGraph
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint

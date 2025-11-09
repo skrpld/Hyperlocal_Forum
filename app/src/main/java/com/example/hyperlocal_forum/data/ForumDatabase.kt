@@ -4,9 +4,9 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import com.example.hyperlocal_forum.data.local.LocalComment
-import com.example.hyperlocal_forum.data.local.LocalTopic
-import com.example.hyperlocal_forum.data.local.LocalUser
+import com.example.hyperlocal_forum.data.models.local.LocalComment
+import com.example.hyperlocal_forum.data.models.local.LocalTopic
+import com.example.hyperlocal_forum.data.models.local.LocalUser
 
 @Database(
     entities = [LocalTopic::class, LocalComment::class, LocalUser::class],

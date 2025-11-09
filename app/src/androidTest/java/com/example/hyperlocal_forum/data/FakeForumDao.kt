@@ -1,9 +1,9 @@
 package com.example.hyperlocal_forum.data
 
-import com.example.hyperlocal_forum.data.firebase.Comment
-import com.example.hyperlocal_forum.data.firebase.Topic
-import com.example.hyperlocal_forum.data.firebase.TopicWithComments
-import com.example.hyperlocal_forum.data.firebase.User
+import com.example.hyperlocal_forum.data.models.firestore.Comment
+import com.example.hyperlocal_forum.data.models.firestore.Topic
+import com.example.hyperlocal_forum.data.models.firestore.TopicWithComments
+import com.example.hyperlocal_forum.data.models.firestore.User
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 

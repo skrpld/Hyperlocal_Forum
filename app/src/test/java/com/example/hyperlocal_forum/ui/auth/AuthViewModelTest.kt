@@ -5,8 +5,9 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.example.hyperlocal_forum.data.ForumDao
-import com.example.hyperlocal_forum.data.firebase.User
-import com.example.hyperlocal_forum.utils.AuthManager
+import com.example.hyperlocal_forum.data.models.firestore.User
+import com.example.hyperlocal_forum.data.AuthManager
+import com.example.hyperlocal_forum.ui.screens.auth.AuthViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher

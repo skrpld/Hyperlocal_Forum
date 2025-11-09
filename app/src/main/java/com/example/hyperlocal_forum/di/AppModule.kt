@@ -4,7 +4,7 @@ import android.content.Context
 import com.example.hyperlocal_forum.data.ForumDatabase
 import com.example.hyperlocal_forum.data.ForumDao
 import com.example.hyperlocal_forum.data.ForumRepository
-import com.example.hyperlocal_forum.utils.AuthManager
+import com.example.hyperlocal_forum.data.AuthManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

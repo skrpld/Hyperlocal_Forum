@@ -1,13 +1,13 @@
 package com.example.hyperlocal_forum.data
 
-import com.example.hyperlocal_forum.data.firebase.Comment
-import com.example.hyperlocal_forum.data.GeoCoordinates
-import com.example.hyperlocal_forum.data.firebase.Topic
-import com.example.hyperlocal_forum.data.firebase.TopicWithComments
-import com.example.hyperlocal_forum.data.firebase.User
-import com.example.hyperlocal_forum.data.local.LocalComment
-import com.example.hyperlocal_forum.data.local.LocalTopic
-import com.example.hyperlocal_forum.data.local.LocalUser
+import com.example.hyperlocal_forum.data.models.firestore.Comment
+import com.example.hyperlocal_forum.data.models.firestore.Topic
+import com.example.hyperlocal_forum.data.models.firestore.TopicWithComments
+import com.example.hyperlocal_forum.data.models.firestore.User
+import com.example.hyperlocal_forum.data.models.local.LocalComment
+import com.example.hyperlocal_forum.data.models.local.LocalTopic
+import com.example.hyperlocal_forum.data.models.local.LocalUser
+import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.GeoPoint
 import com.google.firebase.firestore.Query
@@ -80,7 +80,7 @@ class ForumRepository(
                     location = GeoCoordinates(localTopic.latitude, localTopic.longitude),
                     title = localTopic.title,
                     content = localTopic.content,
-                    timestamp = com.google.firebase.Timestamp(localTopic.timestamp / 1000, 0)
+                    timestamp = Timestamp(localTopic.timestamp / 1000, 0)
                 )
             }
             emit(localTopics)
@@ -122,7 +122,7 @@ class ForumRepository(
                     location = GeoCoordinates(localTopic.latitude, localTopic.longitude),
                     title = localTopic.title,
                     content = localTopic.content,
-                    timestamp = com.google.firebase.Timestamp(localTopic.timestamp / 1000, 0)
+                    timestamp = Timestamp(localTopic.timestamp / 1000, 0)
                 )
             }
             emit(localTopics)
@@ -180,7 +180,7 @@ class ForumRepository(
                         topicId = localComment.topicId.toString(),
                         content = localComment.content,
                         username = localComment.username,
-                        timestamp = com.google.firebase.Timestamp(localComment.timestamp / 1000, 0)
+                        timestamp = Timestamp(localComment.timestamp / 1000, 0)
                     )
                 }
             emit(localComments)
@@ -214,7 +214,7 @@ class ForumRepository(
                 ),
                 title = localTopicWithComments.topic.title,
                 content = localTopicWithComments.topic.content,
-                timestamp = com.google.firebase.Timestamp(localTopicWithComments.topic.timestamp / 1000, 0)
+                timestamp = Timestamp(localTopicWithComments.topic.timestamp / 1000, 0)
             )
             val comments = localTopicWithComments.comments.map { localComment ->
                 Comment(
@@ -223,7 +223,7 @@ class ForumRepository(
                     topicId = localComment.topicId.toString(),
                     content = localComment.content,
                     username = localComment.username,
-                    timestamp = com.google.firebase.Timestamp(localComment.timestamp / 1000, 0)
+                    timestamp = Timestamp(localComment.timestamp / 1000, 0)
                 )
             }
             emit(TopicWithComments(topic, comments))
@@ -269,7 +269,7 @@ class ForumRepository(
                     id = localUser.id.toString(),
                     username = localUser.username,
                     email = localUser.email,
-                    timestamp = com.google.firebase.Timestamp(localUser.timestamp / 1000, 0)
+                    timestamp = Timestamp(localUser.timestamp / 1000, 0)
                 )
             }
         }
@@ -297,7 +297,7 @@ class ForumRepository(
                     id = localUser.id.toString(),
                     username = localUser.username,
                     email = localUser.email,
-                    timestamp = com.google.firebase.Timestamp(localUser.timestamp / 1000, 0)
+                    timestamp = Timestamp(localUser.timestamp / 1000, 0)
                 )
             }
         }

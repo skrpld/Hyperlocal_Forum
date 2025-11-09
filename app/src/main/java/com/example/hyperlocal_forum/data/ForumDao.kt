@@ -5,10 +5,10 @@ import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
-import com.example.hyperlocal_forum.data.local.LocalComment
-import com.example.hyperlocal_forum.data.local.LocalTopic
-import com.example.hyperlocal_forum.data.local.LocalTopicWithComments
-import com.example.hyperlocal_forum.data.local.LocalUser
+import com.example.hyperlocal_forum.data.models.local.LocalComment
+import com.example.hyperlocal_forum.data.models.local.LocalTopic
+import com.example.hyperlocal_forum.data.models.local.LocalTopicWithComments
+import com.example.hyperlocal_forum.data.models.local.LocalUser
 import kotlinx.coroutines.flow.Flow
 
 @Dao
