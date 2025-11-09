@@ -1,5 +1,9 @@
 package com.example.hyperlocal_forum.data
 
+import com.example.hyperlocal_forum.data.firebase.Comment
+import com.example.hyperlocal_forum.data.firebase.Topic
+import com.example.hyperlocal_forum.data.firebase.TopicWithComments
+import com.example.hyperlocal_forum.data.firebase.User
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 
