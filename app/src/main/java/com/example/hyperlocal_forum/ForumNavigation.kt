@@ -9,11 +9,11 @@ object ForumDestinations {
     const val CREATE_TOPIC_ROUTE = "create_topic"
     const val PROFILE_ROUTE = "profile"
 
-    fun topicDetailRoute(topicId: Long) = "topic/$topicId"
+    fun topicDetailRoute(topicId: String) = "topic/$topicId"
 }
 
 class ForumNavigationActions(private val navController: NavHostController) {
-    fun navigateToTopic(topicId: Long) {
+    fun navigateToTopic(topicId: String) {
         navController.navigate(ForumDestinations.topicDetailRoute(topicId))
     }
 
