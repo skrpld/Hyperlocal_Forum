@@ -10,7 +10,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.hyperlocal_forum.ui.theme.Hyperlocal_ForumTheme
 import com.example.hyperlocal_forum.utils.AuthManager
 
@@ -18,25 +17,25 @@ import com.example.hyperlocal_forum.utils.AuthManager
 @Composable
 fun AuthScreen(
     authManager: AuthManager,
+    viewModel: AuthViewModel,
     modifier: Modifier = Modifier,
     onLoginSuccess: () -> Unit
 ) {
     Hyperlocal_ForumTheme {
-        val authViewModel: AuthViewModel = viewModel(factory = AuthViewModelFactory(authManager))
 
-        val username by authViewModel.username.collectAsState()
-        val password by authViewModel.password.collectAsState()
-        val confirmPassword by authViewModel.confirmPassword.collectAsState()
-        val isLoginMode by authViewModel.isLoginMode.collectAsState()
-        val message by authViewModel.message.collectAsState()
-        val isLoading by authViewModel.isLoading.collectAsState()
+        val username by viewModel.username.collectAsState()
+        val password by viewModel.password.collectAsState()
+        val confirmPassword by viewModel.confirmPassword.collectAsState()
+        val isLoginMode by viewModel.isLoginMode.collectAsState()
+        val message by viewModel.authMessage.collectAsState()
+        val isLoading by viewModel.isLoading.collectAsState()
 
         val snackbarHostState = remember { SnackbarHostState() }
 
         LaunchedEffect(message) {
             message?.let { msg ->
                 snackbarHostState.showSnackbar(msg)
-                authViewModel.clearMessage()
+                viewModel.clearMessage()
             }
         }
 
@@ -67,7 +66,7 @@ fun AuthScreen(
                     ) {
                         OutlinedTextField(
                             value = username,
-                            onValueChange = { authViewModel.onUsernameChange(it) },
+                            onValueChange = { viewModel.onUsernameChange(it) },
                             label = { Text("Username") },
                             modifier = Modifier.fillMaxWidth().testTag("AuthScreen_Username"),
                             enabled = !isLoading
@@ -75,7 +74,7 @@ fun AuthScreen(
                         Spacer(modifier = Modifier.height(8.dp))
                         OutlinedTextField(
                             value = password,
-                            onValueChange = { authViewModel.onPasswordChange(it) },
+                            onValueChange = { viewModel.onPasswordChange(it) },
                             label = { Text("Password") },
                             modifier = Modifier.fillMaxWidth().testTag("AuthScreen_Password"),
                             visualTransformation = PasswordVisualTransformation(),
@@ -86,7 +85,7 @@ fun AuthScreen(
                             Spacer(modifier = Modifier.height(8.dp))
                             OutlinedTextField(
                                 value = confirmPassword,
-                                onValueChange = { authViewModel.onConfirmPasswordChange(it) },
+                                onValueChange = { viewModel.onConfirmPasswordChange(it) },
                                 label = { Text("Confirm Password") },
                                 modifier = Modifier.fillMaxWidth().testTag("AuthScreen_ConfirmPassword"),
                                 visualTransformation = PasswordVisualTransformation(),
@@ -96,7 +95,7 @@ fun AuthScreen(
                         }
                         Spacer(modifier = Modifier.height(16.dp))
                         Button(
-                            onClick = { authViewModel.authenticate(onLoginSuccess) },
+                            onClick = { viewModel.authenticate(onLoginSuccess) },
                             modifier = Modifier.fillMaxWidth().testTag(if (isLoginMode) "AuthScreen_LoginButton" else "AuthScreen_RegisterButton"),
                             enabled = !isLoading
                         ) {
@@ -115,7 +114,7 @@ fun AuthScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 TextButton(
-                    onClick = { authViewModel.toggleLoginMode() },
+                    onClick = { viewModel.toggleLoginMode() },
                     modifier = Modifier.testTag("AuthScreen_ToggleModeButton"),
                     enabled = !isLoading
                 ) {

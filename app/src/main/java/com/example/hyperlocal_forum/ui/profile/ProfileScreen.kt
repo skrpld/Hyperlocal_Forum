@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -25,7 +26,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.hyperlocal_forum.utils.AuthManager
 import com.example.hyperlocal_forum.data.ForumDatabase
 
@@ -33,13 +34,11 @@ import com.example.hyperlocal_forum.data.ForumDatabase
 @Composable
 fun ProfileScreen(
     modifier: Modifier = Modifier,
-    authManager: AuthManager
+    viewModel: ProfileViewModel = hiltViewModel(),
+    onBack: () -> Unit = {}
 ) {
-    val context = LocalContext.current
-    val forumDao = ForumDatabase.getDatabase(context).forumDao()
-    val viewModel: ProfileViewModel = viewModel(factory = ProfileViewModelFactory(forumDao, authManager))
-
     val user by viewModel.user.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
 
     var username by remember(user) { mutableStateOf(user?.username ?: "") }
     var password by remember { mutableStateOf("") }
@@ -58,34 +57,45 @@ fun ProfileScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Text("Profile ID: ${user?.id ?: ""}")
-            Spacer(modifier = Modifier.height(16.dp))
-            OutlinedTextField(
-                value = username,
-                onValueChange = { username = it },
-                label = { Text("Username") },
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextField(
-                value = password,
-                onValueChange = { password = it },
-                label = { Text("New Password") },
-                visualTransformation = PasswordVisualTransformation(),
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(onClick = {
-                viewModel.updateUsername(username)
-                if (password.isNotEmpty()) {
-                    viewModel.updatePassword(password)
+            if (isLoading) {
+                CircularProgressIndicator()
+            } else {
+                Text("Profile ID: ${user?.id ?: ""}")
+                Spacer(modifier = Modifier.height(16.dp))
+                OutlinedTextField(
+                    value = username,
+                    onValueChange = { username = it },
+                    label = { Text("Username") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("New Password") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = {
+                        viewModel.updateUsername(username)
+                        if (password.isNotEmpty()) {
+                            viewModel.updatePassword(password)
+                            password = ""
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Save Changes")
                 }
-            }) {
-                Text("Save Changes")
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            Button(onClick = { viewModel.logout() }) {
-                Text("Log Out")
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(
+                    onClick = { viewModel.logout() },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Log Out")
+                }
             }
         }
     }
@@ -94,6 +104,5 @@ fun ProfileScreen(
 @Preview
 @Composable
 fun ProfileScreenPreview() {
-    val authManager = AuthManager(LocalContext.current, ForumDatabase.getDatabase(LocalContext.current).forumDao())
-    ProfileScreen(authManager = authManager)
+    ProfileScreen()
 }

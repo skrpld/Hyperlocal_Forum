@@ -34,14 +34,11 @@ import com.example.hyperlocal_forum.utils.AuthManager
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopicEditScreen(
+    viewModel: TopicEditViewModel,
     modifier: Modifier = Modifier,
     onTopicSaved: () -> Unit,
     onBack: () -> Unit
 ) {
-    val context = LocalContext.current
-    val forumDao = ForumDatabase.getDatabase(context).forumDao()
-    val authManager = AuthManager(context, forumDao)
-    val viewModel: TopicEditViewModel = viewModel(factory = TopicEditViewModelFactory(forumDao, authManager))
 
     val title by viewModel.title.collectAsState()
     val content by viewModel.content.collectAsState()
