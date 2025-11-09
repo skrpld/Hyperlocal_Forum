@@ -1,4 +1,4 @@
-package com.example.hyperlocal_forum.data
+package com.example.hyperlocal_forum.data.local
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
@@ -9,7 +9,7 @@ import androidx.room.PrimaryKey
     tableName = "comments",
     foreignKeys = [
         ForeignKey(
-            entity = Topic::class,
+            entity = LocalTopic::class,
             parentColumns = ["id"],
             childColumns = ["topicId"],
             onDelete = ForeignKey.CASCADE
@@ -17,11 +17,12 @@ import androidx.room.PrimaryKey
     ],
     indices = [Index(value = ["topicId"])]
 )
-data class Comment(
+data class LocalComment(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val userId: Long,
     val topicId: Long,
     val content: String,
-    val username: String
+    val username: String,
+    val timestamp: Long = System.currentTimeMillis()
 )

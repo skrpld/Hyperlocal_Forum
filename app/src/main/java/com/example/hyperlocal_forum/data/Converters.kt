@@ -1,6 +1,7 @@
 package com.example.hyperlocal_forum.data
 
 import androidx.room.TypeConverter
+import com.example.hyperlocal_forum.data.GeoCoordinates
 
 class Converters {
     @TypeConverter

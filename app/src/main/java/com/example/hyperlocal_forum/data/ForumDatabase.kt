@@ -4,10 +4,15 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import androidx.room.TypeConverters
+import com.example.hyperlocal_forum.data.local.LocalComment
+import com.example.hyperlocal_forum.data.local.LocalTopic
+import com.example.hyperlocal_forum.data.local.LocalUser
 
-@Database(entities = [Topic::class, Comment::class, User::class], version = 3, exportSchema = false)
-@TypeConverters(Converters::class)
+@Database(
+    entities = [LocalTopic::class, LocalComment::class, LocalUser::class],
+    version = 3,
+    exportSchema = false
+)
 abstract class ForumDatabase : RoomDatabase() {
     abstract fun forumDao(): ForumDao
 
@@ -22,8 +27,8 @@ abstract class ForumDatabase : RoomDatabase() {
                     ForumDatabase::class.java,
                     "forum_database"
                 )
-                .fallbackToDestructiveMigration() //TODO: Remove this in production
-                .build()
+                    .fallbackToDestructiveMigration()
+                    .build()
                 INSTANCE = instance
                 instance
             }

@@ -1,15 +1,15 @@
-package com.example.hyperlocal_forum.data
+package com.example.hyperlocal_forum.data.local
 
 import androidx.room.Embedded
 import androidx.room.Relation
 
-data class TopicWithComments(
+data class LocalTopicWithComments(
     @Embedded
-    val topic: Topic,
+    val topic: LocalTopic,
 
     @Relation(
         parentColumn = "id",
         entityColumn = "topicId"
     )
-    val comments: List<Comment>
+    val comments: List<LocalComment>
 )
