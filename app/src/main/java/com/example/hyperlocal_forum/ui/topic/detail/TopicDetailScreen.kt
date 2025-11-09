@@ -18,6 +18,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -25,30 +26,33 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.hyperlocal_forum.data.ForumDatabase
-import com.example.hyperlocal_forum.utils.AuthManager
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.hyperlocal_forum.ui.comment.Comments
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopicDetailScreen(
+    topicId: String,
     modifier: Modifier = Modifier,
-    topicId: Long,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    viewModel: TopicDetailViewModel = hiltViewModel()
 ) {
-    val context = LocalContext.current
-    val forumDao = ForumDatabase.getDatabase(context).forumDao()
-    val authManager = AuthManager(context, forumDao)
-    val viewModel: TopicDetailViewModel = viewModel(factory = TopicDetailViewModelFactory(forumDao, topicId))
-
     val topicDetailState by viewModel.topicDetailState.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+
+    LaunchedEffect(topicId) {
+        viewModel.setTopicId(topicId)
+    }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text("by ${topicDetailState?.author?.username ?: ""}") },
+                title = {
+                    Text(
+                        text = "by ${topicDetailState?.author?.username ?: "Unknown"}"
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
@@ -62,20 +66,36 @@ fun TopicDetailScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            topicDetailState?.let { data ->
-                Column(modifier = Modifier.fillMaxSize()) {
-                    TopicHeader(
-                        title = data.topicWithComments.topic.title,
-                        content = data.topicWithComments.topic.content
-                    )
-                    Comments(
-                        topicId = data.topicWithComments.topic.id,
-                        forumDao = forumDao,
-                        comments = data.topicWithComments.comments,
-                        authManager = authManager)
+            when {
+                isLoading -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
                 }
-            } ?: Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+                topicDetailState != null -> {
+                    val data = topicDetailState!!
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        TopicHeader(
+                            title = data.topicWithComments.topic.title,
+                            content = data.topicWithComments.topic.content
+                        )
+                        Comments(
+                            modifier = Modifier.weight(1f),
+                            topicId = data.topicWithComments.topic.id
+                        )
+                    }
+                }
+                else -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("Topic not found")
+                    }
+                }
             }
         }
     }
@@ -84,24 +104,33 @@ fun TopicDetailScreen(
 @Composable
 private fun TopicHeader(title: String, content: String) {
     Card(
-        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.primary),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        ),
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
     ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(8.dp))
-        Card(
-            colors = CardDefaults.cardColors(MaterialTheme.colorScheme.secondary),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp)
-        ) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = content,
-                modifier = Modifier.padding(8.dp))
+                text = title,
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp)
+            ) {
+                Text(
+                    text = content,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
         }
     }
 }
@@ -109,11 +138,14 @@ private fun TopicHeader(title: String, content: String) {
 @Preview
 @Composable
 fun TopicDetailScreenPreview() {
-    TopicDetailScreen(topicId = 1, onBack = {})
+    TopicDetailScreen(topicId = "1", onBack = {})
 }
 
 @Preview
 @Composable
 fun TopicHeaderPreview() {
-    TopicHeader(title = "This is a sample topic title", content = "This is a sample topic content.")
+    TopicHeader(
+        title = "This is a sample topic title",
+        content = "This is a sample topic content."
+    )
 }

@@ -3,46 +3,60 @@ package com.example.hyperlocal_forum.ui.topic.detail
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.hyperlocal_forum.data.Comment
-import com.example.hyperlocal_forum.data.ForumDao
-import com.example.hyperlocal_forum.data.TopicWithComments
-import com.example.hyperlocal_forum.data.User
-import kotlinx.coroutines.flow.SharingStarted
+import com.example.hyperlocal_forum.data.ForumRepository
+import com.example.hyperlocal_forum.data.firebase.TopicWithComments
+import com.example.hyperlocal_forum.data.firebase.User
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 data class TopicDetailState(
     val topicWithComments: TopicWithComments,
     val author: User
 )
 
-class TopicDetailViewModel(
-    private val forumDao: ForumDao,
-    private val topicId: Long
+@HiltViewModel
+class TopicDetailViewModel @Inject constructor(
+    private val forumRepository: ForumRepository
 ) : ViewModel() {
 
-    val topicDetailState: StateFlow<TopicDetailState?> =
-        forumDao.getTopicWithComments(topicId)
-            .combine(forumDao.getUser(topicId)) { topicWithComments, user ->
-                TopicDetailState(topicWithComments, user)
-            }.stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5000),
-                initialValue = null
-            )
-}
+    private var _topicId: String? = null
 
-class TopicDetailViewModelFactory(
-    private val forumDao: ForumDao,
-    private val topicId: Long
-) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(TopicDetailViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return TopicDetailViewModel(forumDao, topicId) as T
+    private val _topicDetailState = MutableStateFlow<TopicDetailState?>(null)
+    val topicDetailState: StateFlow<TopicDetailState?> = _topicDetailState.asStateFlow()
+
+    private val _isLoading = MutableStateFlow(true)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
+    init {
+        loadTopicDetail()
+    }
+
+    fun setTopicId(id: String) {
+        _topicId = id
+        loadTopicDetail()
+    }
+
+    private fun loadTopicDetail() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                _topicId?.let { topicId ->
+                    forumRepository.getTopicWithComments(topicId).collect { topicWithComments ->
+                        val author = forumRepository.getUser(topicWithComments.topic.userId)
+                        if (author != null) {
+                            _topicDetailState.value = TopicDetailState(topicWithComments, author)
+                        }
+                        _isLoading.value = false
+                    }
+                }
+            } catch (e: Exception) {
+                _isLoading.value = false
+                // Обработка ошибки
+            }
         }
-        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

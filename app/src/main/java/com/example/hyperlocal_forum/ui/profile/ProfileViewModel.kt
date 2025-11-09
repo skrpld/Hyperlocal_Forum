@@ -4,51 +4,77 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.hyperlocal_forum.utils.AuthManager
-import com.example.hyperlocal_forum.data.ForumDao
-import com.example.hyperlocal_forum.data.User
-import kotlinx.coroutines.flow.SharingStarted
+import com.example.hyperlocal_forum.data.ForumRepository
+import com.example.hyperlocal_forum.data.firebase.User
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class ProfileViewModel(
-    private val forumDao: ForumDao,
+@HiltViewModel
+class ProfileViewModel @Inject constructor(
+    private val forumRepository: ForumRepository,
     private val authManager: AuthManager
 ) : ViewModel() {
 
-    val user: StateFlow<User?> = forumDao.getUser(authManager.currentUserId.value)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+    private val _user = MutableStateFlow<User?>(null)
+    val user: StateFlow<User?> = _user.asStateFlow()
 
-    fun updateUsername(username: String) {
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
+    init {
+        loadUser()
+    }
+
+    private fun loadUser() {
         viewModelScope.launch {
-            user.value?.let { currentUser ->
-                forumDao.updateUser(currentUser.copy(username = username))
+            _isLoading.value = true
+            try {
+                val userId = authManager.currentUserId.value
+                if (userId != "-1") {
+                    forumRepository.getUser(userId.toString())?.let { user ->
+                        _user.value = user
+                    }
+                }
+            } catch (e: Exception) {
+            } finally {
+                _isLoading.value = false
             }
         }
     }
 
-    fun updatePassword(password: String) {
+    fun updateUsername(username: String) {
         viewModelScope.launch {
-            user.value?.let { currentUser ->
-                forumDao.updateUser(currentUser.copy(passwordHash = password.hashCode().toString()))
+            _user.value?.let { currentUser ->
+                try {
+                    val updatedUser = currentUser.copy(username = username)
+                    forumRepository.createUser(updatedUser)
+                    _user.value = updatedUser
+                } catch (e: Exception) {
+                }
+            }
+        }
+    }
+
+    fun updatePassword(newPassword: String) {
+        viewModelScope.launch {
+            _user.value?.let { currentUser ->
+                try {
+                    val success = forumRepository.updatePassword(currentUser.id, newPassword)
+                    if (success) {
+                    } else {
+                    }
+                } catch (e: Exception) {
+                }
             }
         }
     }
 
     fun logout() {
         authManager.logout()
-    }
-}
-
-class ProfileViewModelFactory(
-    private val forumDao: ForumDao,
-    private val authManager: AuthManager
-) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(ProfileViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return ProfileViewModel(forumDao, authManager) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
+        _user.value = null
     }
 }

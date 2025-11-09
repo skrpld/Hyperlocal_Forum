@@ -1,90 +1,69 @@
 package com.example.hyperlocal_forum.utils
 
-import android.content.Context
-import android.content.SharedPreferences
-import com.example.hyperlocal_forum.data.ForumDao
-import com.example.hyperlocal_forum.data.User
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
+import com.google.firebase.Firebase
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.auth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.tasks.await
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class AuthManager(
-    context: Context,
-    private val forumDao: ForumDao,
-    private val dispatcher: CoroutineDispatcher = Dispatchers.IO
-) {
+@Singleton
+class AuthManager @Inject constructor() {
 
-    private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private val auth: FirebaseAuth = Firebase.auth
 
-    private val _isLoggedIn = MutableStateFlow(prefs.getBoolean(KEY_IS_LOGGED_IN, false))
-    val isLoggedIn: StateFlow<Boolean> = _isLoggedIn
+    private val _currentUserId = MutableStateFlow<String?>(null)
+    val currentUserId: StateFlow<String?> = _currentUserId.asStateFlow()
 
-    private val _currentUserId = MutableStateFlow(prefs.getLong(KEY_USER_ID, -1L))
-    val currentUserId: StateFlow<Long> = _currentUserId
+    private val _isLoggedIn = MutableStateFlow(false)
+    val isLoggedIn: StateFlow<Boolean> = _isLoggedIn.asStateFlow()
 
-    private fun hashPassword(password: String): String {
-        return password.hashCode().toString()  //TODO: Replace with actual hashing algorithm
-    }
-
-    suspend fun register(username: String, password: String): AuthResult = withContext(dispatcher) {
-        if (username.isBlank() || password.isBlank()) {
-            return@withContext AuthResult.Error("Username and password cannot be empty.")
-        }
-        val existingUser = forumDao.getUserByUsername(username)
-        if (existingUser != null) {
-            return@withContext AuthResult.Error("Username already exists.")
-        }
-
-        val passwordHash = hashPassword(password)
-        val newUser = User(username = username, passwordHash = passwordHash)
-        val userId = forumDao.insertUser(newUser)
-        if (userId > 0) {
-            prefs.edit().putBoolean(KEY_IS_LOGGED_IN, true).commit()
-            prefs.edit().putString(KEY_USERNAME, username).commit()
-            prefs.edit().putLong(KEY_USER_ID, userId).commit()
+    init {
+        auth.currentUser?.let { user ->
+            _currentUserId.value = user.uid
             _isLoggedIn.value = true
-            _currentUserId.value = userId
-            AuthResult.Success("Registration successful!")
-        } else {
-            AuthResult.Error("Registration failed.")
         }
     }
 
-    suspend fun login(username: String, password: String): AuthResult = withContext(dispatcher) {
-        if (username.isBlank() || password.isBlank()) {
-            return@withContext AuthResult.Error("Username and password cannot be empty.")
+    suspend fun login(username: String, password: String): AuthResult {
+        return try {
+            val email = if (username.contains("@")) username else "$username@forum.com"
+            val result = auth.signInWithEmailAndPassword(email, password).await()
+            if (result.user != null) {
+                _currentUserId.value = result.user!!.uid
+                _isLoggedIn.value = true
+                AuthResult.Success("Login successful")
+            } else {
+                AuthResult.Error("Login failed")
+            }
+        } catch (e: Exception) {
+            AuthResult.Error("Login error: ${e.message}")
         }
-        val passwordHash = hashPassword(password)
-        val user = forumDao.authenticateUser(username, passwordHash)
-        if (user != null) {
-            prefs.edit().putBoolean(KEY_IS_LOGGED_IN, true).commit()
-            prefs.edit().putString(KEY_USERNAME, username).commit()
-            prefs.edit().putLong(KEY_USER_ID, user.id).commit()
-            _isLoggedIn.value = true
-            _currentUserId.value = user.id
-            AuthResult.Success("Login successful!")
-        } else {
-            AuthResult.Error("Invalid username or password.")
+    }
+
+    suspend fun register(username: String, password: String): AuthResult {
+        return try {
+            val email = if (username.contains("@")) username else "$username@forum.com"
+            val result = auth.createUserWithEmailAndPassword(email, password).await()
+            if (result.user != null) {
+                _currentUserId.value = result.user!!.uid
+                _isLoggedIn.value = true
+                AuthResult.Success("Registration successful")
+            } else {
+                AuthResult.Error("Registration failed")
+            }
+        } catch (e: Exception) {
+            AuthResult.Error("Registration error: ${e.message}")
         }
     }
 
     fun logout() {
-        prefs.edit().clear().commit()
+        auth.signOut()
+        _currentUserId.value = null
         _isLoggedIn.value = false
-        _currentUserId.value = -1L
-    }
-
-    fun getLoggedInUsername(): String? {
-        return prefs.getString(KEY_USERNAME, null)
-    }
-
-    companion object {
-        private const val PREFS_NAME = "auth_prefs"
-        private const val KEY_IS_LOGGED_IN = "is_logged_in"
-        private const val KEY_USERNAME = "username"
-        private const val KEY_USER_ID = "user_id"
     }
 }
 

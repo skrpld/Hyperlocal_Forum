@@ -1,16 +1,23 @@
 package com.example.hyperlocal_forum.ui.auth
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.hyperlocal_forum.data.ForumRepository
+import com.example.hyperlocal_forum.data.firebase.User
 import com.example.hyperlocal_forum.utils.AuthManager
 import com.example.hyperlocal_forum.utils.AuthResult
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class AuthViewModel(private val authManager: AuthManager) : ViewModel() {
+@HiltViewModel
+class AuthViewModel @Inject constructor(
+    private val authManager: AuthManager,
+    private val forumRepository: ForumRepository
+) : ViewModel() {
 
     private val _username = MutableStateFlow("")
     val username: StateFlow<String> = _username.asStateFlow()
@@ -24,8 +31,8 @@ class AuthViewModel(private val authManager: AuthManager) : ViewModel() {
     private val _isLoginMode = MutableStateFlow(true)
     val isLoginMode: StateFlow<Boolean> = _isLoginMode.asStateFlow()
 
-    private val _message = MutableStateFlow<String?>(null)
-    val message: StateFlow<String?> = _message.asStateFlow()
+    private val _authMessage = MutableStateFlow<String?>(null)
+    val authMessage: StateFlow<String?> = _authMessage.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -44,47 +51,62 @@ class AuthViewModel(private val authManager: AuthManager) : ViewModel() {
 
     fun toggleLoginMode() {
         _isLoginMode.value = !_isLoginMode.value
-        _message.value = null
+        _authMessage.value = null
     }
 
     fun authenticate(onLoginSuccess: () -> Unit) {
         if (!_isLoginMode.value && _password.value != _confirmPassword.value) {
-            _message.value = "Passwords do not match"
+            _authMessage.value = "Passwords do not match"
             return
         }
+
         viewModelScope.launch {
             _isLoading.value = true
-            _message.value = null
-            val result = if (_isLoginMode.value) {
-                authManager.login(_username.value, _password.value)
-            } else {
-                authManager.register(_username.value, _password.value)
-            }
+            _authMessage.value = null
 
-            when (result) {
-                is AuthResult.Success -> {
-                    _message.value = result.message
-                    onLoginSuccess()
+            try {
+                if (_isLoginMode.value) {
+                    // Логин
+                    val result = authManager.login(_username.value, _password.value)
+                    when (result) {
+                        is AuthResult.Success -> {
+                            _authMessage.value = result.message
+                            onLoginSuccess()
+                        }
+                        is AuthResult.Error -> {
+                            _authMessage.value = result.message
+                        }
+                    }
+                } else {
+                    val result = authManager.register(_username.value, _password.value)
+                    when (result) {
+                        is AuthResult.Success -> {
+                            val currentUserId = authManager.currentUserId.value
+                            if (currentUserId != null) {
+                                val user = User(
+                                    id = currentUserId,
+                                    username = _username.value,
+                                    email = "${_username.value}@forum.com"
+                                )
+                                forumRepository.createUser(user)
+                            }
+                            _authMessage.value = result.message
+                            onLoginSuccess()
+                        }
+                        is AuthResult.Error -> {
+                            _authMessage.value = result.message
+                        }
+                    }
                 }
-                is AuthResult.Error -> {
-                    _message.value = result.message
-                }
+            } catch (e: Exception) {
+                _authMessage.value = "Network error: ${e.message}"
+            } finally {
+                _isLoading.value = false
             }
-            _isLoading.value = false
         }
     }
 
     fun clearMessage() {
-        _message.value = null
-    }
-}
-
-class AuthViewModelFactory(private val authManager: AuthManager) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(AuthViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return AuthViewModel(authManager) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
+        _authMessage.value = null
     }
 }

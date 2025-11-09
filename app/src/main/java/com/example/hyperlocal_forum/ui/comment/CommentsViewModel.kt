@@ -3,18 +3,21 @@ package com.example.hyperlocal_forum.ui.comment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.hyperlocal_forum.data.Comment
-import com.example.hyperlocal_forum.data.ForumDao
+import com.example.hyperlocal_forum.data.firebase.Comment
+import com.example.hyperlocal_forum.data.ForumRepository
 import com.example.hyperlocal_forum.utils.AuthManager
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class CommentsViewModel(
-    private val forumDao: ForumDao,
-    private val topicId: Long,
+@HiltViewModel
+class CommentsViewModel @Inject constructor(
+    private val forumRepository: ForumRepository,
+    private val topicId: String,
     private val authManager: AuthManager
 ) : ViewModel() {
 
@@ -27,14 +30,29 @@ class CommentsViewModel(
     private val _newCommentContent = MutableStateFlow("")
     val newCommentContent: StateFlow<String> = _newCommentContent.asStateFlow()
 
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
     init {
         loadComments()
     }
 
+    fun setTopicId(id: String) {
+        if (topicId != id) {
+            loadComments()
+        }
+    }
+
     private fun loadComments() {
         viewModelScope.launch {
-            forumDao.getTopicWithComments(topicId).collect { topicWithComments ->
-                _comments.value = topicWithComments.comments
+            _isLoading.value = true
+            try {
+                forumRepository.getCommentsForTopic(topicId).collect { commentsList ->
+                    _comments.value = commentsList
+                    _isLoading.value = false
+                }
+            } catch (e: Exception) {
+                _isLoading.value = false
             }
         }
     }
@@ -54,28 +72,24 @@ class CommentsViewModel(
         viewModelScope.launch {
             if (_newCommentContent.value.isNotBlank()) {
                 val userId = authManager.currentUserId.first()
-                if (userId != -1L) {
-                    val user = forumDao.getUser(userId).first()
-                    val newComment = Comment(userId = userId, topicId = topicId, content = _newCommentContent.value, username = user.username)
-                    forumDao.insertComment(newComment)
-                    _newCommentContent.value = ""
-                    _showCommentInput.value = false
+                if (userId != "-1") {
+                    try {
+                        val user = forumRepository.getUser(userId.toString())
+                        if (user != null) {
+                            val newComment = Comment(
+                                userId = userId.toString(),
+                                topicId = topicId,
+                                content = _newCommentContent.value,
+                                username = user.username
+                            )
+                            forumRepository.addComment(newComment)
+                            _newCommentContent.value = ""
+                            _showCommentInput.value = false
+                        }
+                    } catch (e: Exception) {
+                    }
                 }
             }
         }
-    }
-}
-
-class CommentsViewModelFactory(
-    private val forumDao: ForumDao,
-    private val topicId: Long,
-    private val authManager: AuthManager
-) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(CommentsViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return CommentsViewModel(forumDao, topicId, authManager) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
