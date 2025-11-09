@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.hyperlocal_forum.data.Comment
 import com.example.hyperlocal_forum.data.ForumDao
-import com.example.hyperlocal_forum.ui.auth.AuthManager
+import com.example.hyperlocal_forum.utils.AuthManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

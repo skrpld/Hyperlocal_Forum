@@ -12,6 +12,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.hyperlocal_forum.ui.theme.Hyperlocal_ForumTheme
+import com.example.hyperlocal_forum.utils.AuthManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

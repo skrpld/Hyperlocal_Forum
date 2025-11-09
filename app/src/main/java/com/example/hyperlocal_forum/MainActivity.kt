@@ -8,11 +8,12 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
-import com.example.hyperlocal_forum.ui.auth.AuthManager
+import com.example.hyperlocal_forum.utils.AuthManager
 import com.example.hyperlocal_forum.data.ForumDatabase
 import com.example.hyperlocal_forum.ui.theme.Hyperlocal_ForumTheme
 
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()

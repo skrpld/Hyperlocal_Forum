@@ -9,7 +9,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.NavType
-import com.example.hyperlocal_forum.ui.auth.AuthManager
+import com.example.hyperlocal_forum.utils.AuthManager
 import com.example.hyperlocal_forum.ui.auth.AuthScreen
 import com.example.hyperlocal_forum.ui.profile.ProfileScreen
 import com.example.hyperlocal_forum.ui.topic.detail.TopicDetailScreen

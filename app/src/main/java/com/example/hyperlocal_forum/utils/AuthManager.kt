@@ -1,4 +1,4 @@
-package com.example.hyperlocal_forum.ui.auth
+package com.example.hyperlocal_forum.utils
 
 import android.content.Context
 import android.content.SharedPreferences

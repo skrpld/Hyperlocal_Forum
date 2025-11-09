@@ -27,7 +27,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.hyperlocal_forum.data.ForumDatabase
-import com.example.hyperlocal_forum.ui.auth.AuthManager
+import com.example.hyperlocal_forum.utils.AuthManager
 import com.example.hyperlocal_forum.ui.comment.Comments
 
 @OptIn(ExperimentalMaterial3Api::class)

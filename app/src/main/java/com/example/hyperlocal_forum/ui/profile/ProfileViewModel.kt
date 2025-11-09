@@ -3,7 +3,7 @@ package com.example.hyperlocal_forum.ui.profile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.hyperlocal_forum.ui.auth.AuthManager
+import com.example.hyperlocal_forum.utils.AuthManager
 import com.example.hyperlocal_forum.data.ForumDao
 import com.example.hyperlocal_forum.data.User
 import kotlinx.coroutines.flow.SharingStarted

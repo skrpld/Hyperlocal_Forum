@@ -10,6 +10,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.hyperlocal_forum.data.FakeForumDao
 import com.example.hyperlocal_forum.data.User
+import com.example.hyperlocal_forum.utils.AuthManager
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

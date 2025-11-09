@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.hyperlocal_forum.data.Comment
 import com.example.hyperlocal_forum.data.ForumDao
-import com.example.hyperlocal_forum.ui.auth.AuthManager
+import com.example.hyperlocal_forum.utils.AuthManager
 
 @Composable
 fun Comments(
