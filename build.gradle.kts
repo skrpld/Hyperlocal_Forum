@@ -6,4 +6,5 @@ plugins {
     alias(libs.plugins.kotlin.ksp) apply false
     alias(libs.plugins.google.gms.google.services) apply false
     alias(libs.plugins.google.firebase.crashlytics) apply false
+    id("com.google.dagger.hilt.android") version "2.57.1" apply false
 }
