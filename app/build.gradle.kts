@@ -66,6 +66,9 @@ dependencies {
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.hilt.android.v2571)
     ksp(libs.hilt.android.compiler)
+    ksp(libs.hilt.compiler)
+    implementation(libs.assisted.inject.annotations.dagger2)
+    ksp(libs.assisted.inject.processor.dagger2)
 
     implementation(libs.firebase.crashlytics)
     implementation(platform(libs.firebase.bom))
@@ -73,6 +76,12 @@ dependencies {
     implementation(libs.firebase.functions)
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.auth.ktx)
+
+    implementation(libs.google.firebase.analytics)
+    implementation(libs.firebase.auth)
+    implementation(libs.google.firebase.firestore)
+    implementation(libs.play.services.auth)
+    implementation(libs.play.services.base)
 
     testImplementation(libs.junit)
     testImplementation(libs.mockito.core)
