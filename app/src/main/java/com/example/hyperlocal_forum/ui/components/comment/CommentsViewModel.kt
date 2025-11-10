@@ -1,5 +1,6 @@
 package com.example.hyperlocal_forum.ui.components.comment
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.hyperlocal_forum.data.models.firestore.Comment
@@ -16,9 +17,12 @@ import javax.inject.Inject
 @HiltViewModel
 class CommentsViewModel @Inject constructor(
     private val forumRepository: ForumRepository,
-    private val topicId: String,
-    private val authManager: AuthManager
+    private val authManager: AuthManager,
+    private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
+
+    private var currentTopicId: String = ""
+        get() = savedStateHandle["topicId"] ?: field
 
     private val _comments = MutableStateFlow<List<Comment>>(emptyList())
     val comments: StateFlow<List<Comment>> = _comments.asStateFlow()
@@ -32,21 +36,21 @@ class CommentsViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    init {
-        loadComments()
-    }
-
-    fun setTopicId(id: String) {
-        if (topicId != id) {
+    fun setTopicId(topicId: String) {
+        if (currentTopicId != topicId) {
+            savedStateHandle["topicId"] = topicId
+            currentTopicId = topicId
             loadComments()
         }
     }
 
     private fun loadComments() {
+        if (currentTopicId.isEmpty()) return
+
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                forumRepository.getCommentsForTopic(topicId).collect { commentsList ->
+                forumRepository.getCommentsForTopic(currentTopicId).collect { commentsList ->
                     _comments.value = commentsList
                     _isLoading.value = false
                 }
@@ -68,6 +72,8 @@ class CommentsViewModel @Inject constructor(
     }
 
     fun saveComment() {
+        if (currentTopicId.isEmpty()) return
+
         viewModelScope.launch {
             if (_newCommentContent.value.isNotBlank()) {
                 val userId = authManager.currentUserId.first()
@@ -77,7 +83,7 @@ class CommentsViewModel @Inject constructor(
                         if (user != null) {
                             val newComment = Comment(
                                 userId = userId.toString(),
-                                topicId = topicId,
+                                topicId = currentTopicId,
                                 content = _newCommentContent.value,
                                 username = user.username
                             )
@@ -86,6 +92,7 @@ class CommentsViewModel @Inject constructor(
                             _showCommentInput.value = false
                         }
                     } catch (e: Exception) {
+                        // Handle error
                     }
                 }
             }
