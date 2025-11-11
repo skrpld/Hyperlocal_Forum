@@ -7,13 +7,14 @@ import androidx.lifecycle.viewModelScope
 import com.example.hyperlocal_forum.data.ForumRepository
 import com.example.hyperlocal_forum.data.GeoCoordinates
 import com.example.hyperlocal_forum.data.models.firestore.Topic
+import com.example.hyperlocal_forum.data.models.firestore.User
+import com.google.android.gms.location.FusedLocationProviderClient
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import com.google.android.gms.location.FusedLocationProviderClient
 
 @HiltViewModel
 class TopicsViewModel @Inject constructor(
@@ -26,6 +27,9 @@ class TopicsViewModel @Inject constructor(
 
     private val _topics = MutableStateFlow<List<Topic>>(emptyList())
     val topics: StateFlow<List<Topic>> = _topics.asStateFlow()
+
+    private val _usersMap = MutableStateFlow<Map<String, User>>(emptyMap())
+    val usersMap: StateFlow<Map<String, User>> = _usersMap.asStateFlow()
 
     private val _userLocation = MutableStateFlow<GeoCoordinates?>(null)
     val userLocation: StateFlow<GeoCoordinates?> = _userLocation.asStateFlow()
@@ -43,6 +47,7 @@ class TopicsViewModel @Inject constructor(
             try {
                 forumRepository.getAllTopics().collect { topicsList ->
                     _topics.value = topicsList
+                    updateUsersMap(topicsList)
                     _isLoading.value = false
                 }
             } catch (e: Exception) {
@@ -58,6 +63,7 @@ class TopicsViewModel @Inject constructor(
                 try {
                     forumRepository.findNearbyTopics(location, 1.0).collect { nearbyTopics ->
                         _topics.value = nearbyTopics
+                        updateUsersMap(nearbyTopics)
                         _isLoading.value = false
                     }
                 } catch (e: Exception) {
@@ -67,6 +73,15 @@ class TopicsViewModel @Inject constructor(
         } ?: run {
             _isLoading.value = false
         }
+    }
+
+    private suspend fun updateUsersMap(topics: List<Topic>) {
+        if (topics.isEmpty()) {
+            _usersMap.value = emptyMap()
+            return
+        }
+        val userIds = topics.map { it.userId }.distinct()
+        _usersMap.value = forumRepository.getUsers(userIds)
     }
 
     fun loadAllTopics() {

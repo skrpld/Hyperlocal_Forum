@@ -1,6 +1,12 @@
-package com.example.hyperlocal_forum.data
+package com.example.hyperlocal_forum.di
 
-import kotlin.math.*
+import com.example.hyperlocal_forum.data.GeoCoordinates
+import kotlin.math.asin
+import kotlin.math.cos
+import kotlin.math.pow
+import kotlin.math.sin
+import kotlin.math.sqrt
+import kotlin.text.iterator
 
 object GeoUtils {
     private const val EARTH_RADIUS_KM = 6371.0

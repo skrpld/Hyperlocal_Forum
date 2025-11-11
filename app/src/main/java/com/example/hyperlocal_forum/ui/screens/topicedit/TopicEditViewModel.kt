@@ -51,6 +51,12 @@ class TopicEditViewModel @Inject constructor(
 
     fun saveTopic() {
         viewModelScope.launch {
+            val userId = authManager.currentUserId.value
+            if (userId.isNullOrBlank()) {
+                _errorMessage.value = "You must be logged in to create a topic."
+                return@launch
+            }
+
             if (_title.value.isBlank() || _content.value.isBlank()) {
                 _errorMessage.value = "Title and content cannot be empty"
                 return@launch
@@ -66,7 +72,7 @@ class TopicEditViewModel @Inject constructor(
 
             try {
                 val topic = Topic(
-                    userId = authManager.currentUserId.value.toString(),
+                    userId = userId,
                     location = _location.value!!,
                     title = _title.value,
                     content = _content.value

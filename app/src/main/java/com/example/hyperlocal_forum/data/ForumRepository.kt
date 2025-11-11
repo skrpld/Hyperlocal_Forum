@@ -8,8 +8,10 @@ import com.example.hyperlocal_forum.data.models.firestore.User
 import com.example.hyperlocal_forum.data.models.local.LocalComment
 import com.example.hyperlocal_forum.data.models.local.LocalTopic
 import com.example.hyperlocal_forum.data.models.local.LocalUser
+import com.example.hyperlocal_forum.di.GeoUtils
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.GeoPoint
 import com.google.firebase.firestore.Query
@@ -313,6 +315,37 @@ class ForumRepository(
                 )
             }
         }
+    }
+
+    // НОВЫЙ МЕТОД
+    suspend fun getUsers(userIds: List<String>): Map<String, User> {
+        if (userIds.isEmpty()) {
+            return emptyMap()
+        }
+
+        val usersMap = mutableMapOf<String, User>()
+
+        try {
+            userIds.chunked(30).forEach { chunk ->
+                val snapshot = usersCollection.whereIn(FieldPath.documentId(), chunk).get().await()
+                snapshot.documents.forEach { doc ->
+                    val timestamp = doc.getTimestamp("timestamp")
+                    if (timestamp != null) {
+                        val user = User(
+                            id = doc.id,
+                            username = doc.getString("username") ?: "Unknown",
+                            email = doc.getString("email"),
+                            timestamp = timestamp
+                        )
+                        usersMap[doc.id] = user
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        return usersMap
     }
 
     suspend fun getUserByUsername(username: String): User? {

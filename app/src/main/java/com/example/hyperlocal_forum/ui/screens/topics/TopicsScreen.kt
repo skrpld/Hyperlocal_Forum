@@ -1,43 +1,18 @@
 package com.example.hyperlocal_forum.ui.screens.topics
 
+import android.Manifest
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Public
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material3.Card
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -45,18 +20,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.hyperlocal_forum.data.GeoCoordinates
 import com.example.hyperlocal_forum.data.models.firestore.Topic
+import com.example.hyperlocal_forum.data.models.firestore.User
 import com.example.hyperlocal_forum.ui.topics.TopicsViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.firebase.Timestamp
 import java.text.SimpleDateFormat
-import java.util.Locale
-import android.Manifest
-import android.content.Intent
-import android.net.Uri
-import android.provider.Settings
-import androidx.compose.material3.*
-import androidx.compose.runtime.saveable.rememberSaveable
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
@@ -68,6 +38,7 @@ fun TopicsScreen(
     navigateToProfile: () -> Unit
 ) {
     val topics by viewModel.topics.collectAsState()
+    val usersMap by viewModel.usersMap.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val showNearbyOnly by viewModel.showNearbyOnly.collectAsState()
     val userLocation by viewModel.userLocation.collectAsState()
@@ -175,6 +146,7 @@ fun TopicsScreen(
                 TopicList(
                     modifier = Modifier.weight(1f),
                     topics = topics,
+                    users = usersMap,
                     onTopicClick = navigateToTopic
                 )
             }
@@ -182,6 +154,7 @@ fun TopicsScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopicFilterSection(
     showNearbyOnly: Boolean,
@@ -259,6 +232,7 @@ private fun PermanentlyDeniedDialog(onDismiss: () -> Unit, onGoToSettings: () ->
 @Composable
 fun TopicList(
     topics: List<Topic>,
+    users: Map<String, User>,
     onTopicClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -289,8 +263,10 @@ fun TopicList(
     } else {
         LazyColumn(modifier = modifier) {
             items(topics) { topic ->
+                val authorName = users[topic.userId]?.username ?: "Unknown User"
                 TopicItem(
                     topic = topic,
+                    authorName = authorName,
                     onTopicClick = { onTopicClick(topic.id) },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -304,6 +280,7 @@ fun TopicList(
 @Composable
 fun TopicItem(
     topic: Topic,
+    authorName: String,
     onTopicClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -340,7 +317,7 @@ fun TopicItem(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "By User #${topic.userId}",
+                    text = "By $authorName",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                 )
