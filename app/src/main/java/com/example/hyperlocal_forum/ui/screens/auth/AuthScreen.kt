@@ -11,12 +11,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.hyperlocal_forum.ui.theme.Hyperlocal_ForumTheme
-import com.example.hyperlocal_forum.data.AuthManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AuthScreen(
-    authManager: AuthManager,
     viewModel: AuthViewModel,
     modifier: Modifier = Modifier,
     onLoginSuccess: () -> Unit
@@ -24,6 +22,7 @@ fun AuthScreen(
     Hyperlocal_ForumTheme {
 
         val username by viewModel.username.collectAsState()
+        val email by viewModel.email.collectAsState()
         val password by viewModel.password.collectAsState()
         val confirmPassword by viewModel.confirmPassword.collectAsState()
         val isLoginMode by viewModel.isLoginMode.collectAsState()
@@ -64,14 +63,32 @@ fun AuthScreen(
                     Column(
                         modifier = Modifier.padding(16.dp)
                     ) {
+
+                        // Поле Username отображается только при регистрации
+                        if (!isLoginMode) {
+                            OutlinedTextField(
+                                value = username,
+                                onValueChange = { viewModel.onUsernameChange(it) },
+                                label = { Text("Username") },
+                                modifier = Modifier.fillMaxWidth().testTag("AuthScreen_Username"),
+                                enabled = !isLoading
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
+
+                        // Поле Email отображается всегда
                         OutlinedTextField(
-                            value = username,
-                            onValueChange = { viewModel.onUsernameChange(it) },
-                            label = { Text("Username") },
-                            modifier = Modifier.fillMaxWidth().testTag("AuthScreen_Username"),
+                            value = email,
+                            // --- ИСПРАВЛЕНИЕ ЗДЕСЬ ---
+                            onValueChange = { viewModel.onEmailChange(it) }, // Было onValuechange
+                            label = { Text("Email") },
+                            modifier = Modifier.fillMaxWidth().testTag("AuthScreen_Email"),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                             enabled = !isLoading
                         )
+
                         Spacer(modifier = Modifier.height(8.dp))
+
                         OutlinedTextField(
                             value = password,
                             onValueChange = { viewModel.onPasswordChange(it) },

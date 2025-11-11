@@ -46,7 +46,6 @@ fun ForumNavGraph(
         composable(ForumDestinations.LOGIN_ROUTE) {
             val authViewModel: AuthViewModel = hiltViewModel()
             AuthScreen(
-                authManager = authManager,
                 viewModel = authViewModel,
                 onLoginSuccess = { navActions.navigateToTopics() }
             )

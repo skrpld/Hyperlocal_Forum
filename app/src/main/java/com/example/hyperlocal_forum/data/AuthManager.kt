@@ -28,9 +28,8 @@ class AuthManager @Inject constructor() {
         }
     }
 
-    suspend fun login(username: String, password: String): AuthResult {
+    suspend fun login(email: String, password: String): AuthResult {
         return try {
-            val email = if (username.contains("@")) username else "$username@forum.com"
             val result = auth.signInWithEmailAndPassword(email, password).await()
             if (result.user != null) {
                 _currentUserId.value = result.user!!.uid
@@ -44,9 +43,8 @@ class AuthManager @Inject constructor() {
         }
     }
 
-    suspend fun register(username: String, password: String): AuthResult {
+    suspend fun register(email: String, password: String): AuthResult {
         return try {
-            val email = if (username.contains("@")) username else "$username@forum.com"
             val result = auth.createUserWithEmailAndPassword(email, password).await()
             if (result.user != null) {
                 _currentUserId.value = result.user!!.uid
