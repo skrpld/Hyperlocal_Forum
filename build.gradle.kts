@@ -6,11 +6,11 @@ plugins {
     alias(libs.plugins.kotlin.ksp) apply false
     alias(libs.plugins.google.gms.google.services) apply false
     alias(libs.plugins.google.firebase.crashlytics) apply false
-    id("com.google.dagger.hilt.android") version "2.57.1" apply false
+    id("com.google.dagger.hilt.android") version "2.57.2" apply false
 }
 buildscript {
     dependencies {
-        classpath("com.google.gms:google-services:4.4.0")
-        classpath("com.android.tools.build:gradle:8.1.0")
+        classpath(libs.google.services)
+        classpath(libs.gradle)
     }
 }

@@ -7,6 +7,8 @@ firebaseAuthKtx = "23.2.1"
 firebaseBom = "34.5.0"
 firebaseBomVersion = "32.8.0"
 googleHiltAndroid = "2.48"
+googleServices = "4.4.4"
+gradle = "8.13.1"
 hiltAndroid = "2.57.2"
 hiltAndroidCompiler = "2.57.2"
 hiltAndroidVersion = "2.57.1"
@@ -60,6 +62,8 @@ firebase-firestore = { module = "com.google.firebase:firebase-firestore" }
 firebase-functions = { module = "com.google.firebase:firebase-functions" }
 google-firebase-analytics = { module = "com.google.firebase:firebase-analytics" }
 google-firebase-firestore = { module = "com.google.firebase:firebase-firestore" }
+google-services = { module = "com.google.gms:google-services", version.ref = "googleServices" }
+gradle = { module = "com.android.tools.build:gradle", version.ref = "gradle" }
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hiltAndroid" }
 hilt-android-compiler = { module = "com.google.dagger:hilt-android-compiler", version.ref = "hiltAndroidCompiler" }
 hilt-android-v248 = { module = "com.google.dagger:hilt-android", version.ref = "googleHiltAndroid" }
