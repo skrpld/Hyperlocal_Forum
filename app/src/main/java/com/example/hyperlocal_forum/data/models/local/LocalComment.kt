@@ -18,10 +18,10 @@ import androidx.room.PrimaryKey
     indices = [Index(value = ["topicId"])]
 )
 data class LocalComment(
-    @PrimaryKey(autoGenerate = true)
-    val id: Long = 0,
-    val userId: Long,
-    val topicId: Long,
+    @PrimaryKey
+    val id: String,
+    val userId: String,
+    val topicId: String,
     val content: String,
     val username: String,
     val timestamp: Long = System.currentTimeMillis()

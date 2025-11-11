@@ -15,6 +15,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -25,20 +26,27 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     modifier: Modifier = Modifier,
     viewModel: ProfileViewModel = hiltViewModel(),
-    onBack: () -> Unit = {}
+    onBack: () -> Unit = {},
+    onLogout: () -> Unit = {}
 ) {
     val user by viewModel.user.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
 
-    var username by remember(user) { mutableStateOf(user?.username ?: "") }
+    var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+
+    LaunchedEffect(user) {
+        user?.let { currentData ->
+            username = currentData.username
+        }
+    }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -54,11 +62,9 @@ fun ProfileScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            if (isLoading) {
+            if (isLoading && user == null) {
                 CircularProgressIndicator()
             } else {
-                Text("Profile ID: ${user?.id ?: ""}")
-                Spacer(modifier = Modifier.height(16.dp))
                 OutlinedTextField(
                     value = username,
                     onValueChange = { username = it },
@@ -76,11 +82,8 @@ fun ProfileScreen(
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(
                     onClick = {
-                        viewModel.updateUsername(username)
-                        if (password.isNotEmpty()) {
-                            viewModel.updatePassword(password)
-                            password = ""
-                        }
+                        viewModel.onSaveChanges(username, password)
+                        password = ""
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -88,7 +91,7 @@ fun ProfileScreen(
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(
-                    onClick = { viewModel.logout() },
+                    onClick = { viewModel.logout { onLogout() } },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Log Out")

@@ -1,6 +1,7 @@
 package com.example.hyperlocal_forum.data
 
 import com.example.hyperlocal_forum.data.models.firestore.Comment
+import com.example.hyperlocal_forum.data.GeoCoordinates
 import com.example.hyperlocal_forum.data.models.firestore.Topic
 import com.example.hyperlocal_forum.data.models.firestore.TopicWithComments
 import com.example.hyperlocal_forum.data.models.firestore.User
@@ -8,6 +9,7 @@ import com.example.hyperlocal_forum.data.models.local.LocalComment
 import com.example.hyperlocal_forum.data.models.local.LocalTopic
 import com.example.hyperlocal_forum.data.models.local.LocalUser
 import com.google.firebase.Timestamp
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.GeoPoint
 import com.google.firebase.firestore.Query
@@ -41,7 +43,8 @@ class ForumRepository(
         val document = topicsCollection.add(topicData).await()
 
         val localTopic = LocalTopic(
-            userId = topic.userId.toLongOrNull() ?: 0L,
+            id = document.id,
+            userId = topic.userId,
             latitude = topic.location.latitude,
             longitude = topic.location.longitude,
             title = topic.title,
@@ -75,8 +78,8 @@ class ForumRepository(
         } catch (e: Exception) {
             val localTopics = forumDao.getAllTopics().first().map { localTopic ->
                 Topic(
-                    id = localTopic.id.toString(),
-                    userId = localTopic.userId.toString(),
+                    id = localTopic.id,
+                    userId = localTopic.userId,
                     location = GeoCoordinates(localTopic.latitude, localTopic.longitude),
                     title = localTopic.title,
                     content = localTopic.content,
@@ -117,8 +120,8 @@ class ForumRepository(
                 userLocation.longitude
             ).first().map { localTopic ->
                 Topic(
-                    id = localTopic.id.toString(),
-                    userId = localTopic.userId.toString(),
+                    id = localTopic.id,
+                    userId = localTopic.userId,
                     location = GeoCoordinates(localTopic.latitude, localTopic.longitude),
                     title = localTopic.title,
                     content = localTopic.content,
@@ -141,8 +144,9 @@ class ForumRepository(
         val document = commentsCollection.add(commentData).await()
 
         val localComment = LocalComment(
-            userId = comment.userId.toLongOrNull() ?: 0L,
-            topicId = comment.topicId.toLongOrNull() ?: 0L,
+            id = document.id,
+            userId = comment.userId,
+            topicId = comment.topicId,
             content = comment.content,
             username = comment.username,
             timestamp = comment.timestamp.seconds * 1000
@@ -172,12 +176,12 @@ class ForumRepository(
             }
             emit(comments)
         } catch (e: Exception) {
-            val localComments = forumDao.getTopicWithComments(topicId.toLongOrNull() ?: 0L)
+            val localComments = forumDao.getTopicWithComments(topicId)
                 .first().comments.map { localComment ->
                     Comment(
-                        id = localComment.id.toString(),
-                        userId = localComment.userId.toString(),
-                        topicId = localComment.topicId.toString(),
+                        id = localComment.id,
+                        userId = localComment.userId,
+                        topicId = localComment.topicId,
                         content = localComment.content,
                         username = localComment.username,
                         timestamp = Timestamp(localComment.timestamp / 1000, 0)
@@ -204,10 +208,10 @@ class ForumRepository(
 
             emit(TopicWithComments(topic, comments))
         } catch (e: Exception) {
-            val localTopicWithComments = forumDao.getTopicWithComments(topicId.toLongOrNull() ?: 0L).first()
+            val localTopicWithComments = forumDao.getTopicWithComments(topicId).first()
             val topic = Topic(
-                id = localTopicWithComments.topic.id.toString(),
-                userId = localTopicWithComments.topic.userId.toString(),
+                id = localTopicWithComments.topic.id,
+                userId = localTopicWithComments.topic.userId,
                 location = GeoCoordinates(
                     localTopicWithComments.topic.latitude,
                     localTopicWithComments.topic.longitude
@@ -218,9 +222,9 @@ class ForumRepository(
             )
             val comments = localTopicWithComments.comments.map { localComment ->
                 Comment(
-                    id = localComment.id.toString(),
-                    userId = localComment.userId.toString(),
-                    topicId = localComment.topicId.toString(),
+                    id = localComment.id,
+                    userId = localComment.userId,
+                    topicId = localComment.topicId,
                     content = localComment.content,
                     username = localComment.username,
                     timestamp = Timestamp(localComment.timestamp / 1000, 0)
@@ -237,9 +241,15 @@ class ForumRepository(
             "timestamp" to user.timestamp
         )
 
-        val document = usersCollection.add(userData).await()
+        val userId = if (user.id.isNotBlank()) {
+            usersCollection.document(user.id).set(userData).await()
+            user.id
+        } else {
+            usersCollection.add(userData).await().id
+        }
 
         val localUser = LocalUser(
+            id = userId,
             username = user.username,
             passwordHash = "",
             email = user.email,
@@ -247,7 +257,7 @@ class ForumRepository(
         )
         forumDao.insertUser(localUser)
 
-        return document.id
+        return userId
     }
 
     suspend fun getUser(userId: String): User? {
@@ -264,9 +274,9 @@ class ForumRepository(
                 null
             }
         } catch (e: Exception) {
-            return forumDao.getUser(userId.toLongOrNull() ?: 0L).first()?.let { localUser ->
+            return forumDao.getUser(userId).first()?.let { localUser ->
                 User(
-                    id = localUser.id.toString(),
+                    id = localUser.id,
                     username = localUser.username,
                     email = localUser.email,
                     timestamp = Timestamp(localUser.timestamp / 1000, 0)
@@ -294,7 +304,7 @@ class ForumRepository(
         } catch (e: Exception) {
             return forumDao.getUserByUsername(username)?.let { localUser ->
                 User(
-                    id = localUser.id.toString(),
+                    id = localUser.id,
                     username = localUser.username,
                     email = localUser.email,
                     timestamp = Timestamp(localUser.timestamp / 1000, 0)
@@ -303,30 +313,8 @@ class ForumRepository(
         }
     }
 
-    suspend fun updatePassword(userId: String, newPassword: String): Boolean {
-        return try {
-            // Обновление в Firebase
-            val userDoc = usersCollection.document(userId)
-            userDoc.update("password", newPassword).await()
-
-            // Обновление в локальной базе данных
-            val localUserId = userId.toLongOrNull()
-            if (localUserId != null) {
-                // Здесь предполагается, что у вас есть метод для обновления пароля в DAO
-                // Если нет, нужно добавить соответствующий метод в ForumDao
-                forumDao.updateUserPassword(localUserId, newPassword)
-            }
-
-            true
-        } catch (e: Exception) {
-            e.printStackTrace()
-            false
-        }
-    }
-
     suspend fun updateUser(user: User): Boolean {
         return try {
-            // Обновление в Firebase
             val userData = hashMapOf(
                 "username" to user.username,
                 "email" to user.email,
@@ -335,19 +323,25 @@ class ForumRepository(
 
             usersCollection.document(user.id).update(userData as Map<String, Any>).await()
 
-            // Обновление в локальной базе данных
-            val localUserId = user.id.toLongOrNull()
-            if (localUserId != null) {
-                val localUser = LocalUser(
-                    id = localUserId,
-                    username = user.username,
-                    passwordHash = "", // Пароль не обновляем здесь
-                    email = user.email,
-                    timestamp = user.timestamp.seconds * 1000
-                )
-                forumDao.updateUser(localUser)
-            }
+            val localUser = LocalUser(
+                id = user.id,
+                username = user.username,
+                passwordHash = "",
+                email = user.email,
+                timestamp = user.timestamp.seconds * 1000
+            )
+            forumDao.updateUser(localUser)
 
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+
+    suspend fun updatePassword(userId: String, newPassword: String):Boolean {
+        return try {
+            FirebaseAuth.getInstance().currentUser?.updatePassword(newPassword)?.await()
             true
         } catch (e: Exception) {
             e.printStackTrace()

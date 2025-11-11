@@ -65,37 +65,27 @@ class AuthViewModel @Inject constructor(
             _authMessage.value = null
 
             try {
-                if (_isLoginMode.value) {
-                    // Логин
-                    val result = authManager.login(_username.value, _password.value)
-                    when (result) {
-                        is AuthResult.Success -> {
-                            _authMessage.value = result.message
-                            onLoginSuccess()
-                        }
-                        is AuthResult.Error -> {
-                            _authMessage.value = result.message
-                        }
-                    }
+                val result = if (_isLoginMode.value) {
+                    authManager.login(_username.value, _password.value)
                 } else {
-                    val result = authManager.register(_username.value, _password.value)
-                    when (result) {
-                        is AuthResult.Success -> {
-                            val currentUserId = authManager.currentUserId.value
-                            if (currentUserId != null) {
-                                val user = User(
-                                    id = currentUserId,
-                                    username = _username.value,
-                                    email = "${_username.value}@forum.com"
-                                )
-                                forumRepository.createUser(user)
-                            }
-                            _authMessage.value = result.message
-                            onLoginSuccess()
+                    authManager.register(_username.value, _password.value)
+                }
+
+                when (result) {
+                    is AuthResult.Success -> {
+                        if (!_isLoginMode.value) {
+                            val user = User(
+                                id = result.userId,
+                                username = _username.value,
+                                email = "${_username.value}@forum.com"
+                            )
+                            forumRepository.createUser(user)
                         }
-                        is AuthResult.Error -> {
-                            _authMessage.value = result.message
-                        }
+                        _authMessage.value = result.message
+                        onLoginSuccess()
+                    }
+                    is AuthResult.Error -> {
+                        _authMessage.value = result.message
                     }
                 }
             } catch (e: Exception) {

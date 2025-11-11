@@ -9,6 +9,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -25,55 +27,56 @@ class ProfileViewModel @Inject constructor(
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     init {
-        loadUser()
+        authManager.currentUserId.onEach { userId ->
+            userId?.let { 
+                loadUser(it)
+            }
+        }.launchIn(viewModelScope)
     }
 
-    private fun loadUser() {
+    private fun loadUser(userId: String) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val userId = authManager.currentUserId.value
-                if (userId != "-1") {
-                    forumRepository.getUser(userId.toString())?.let { user ->
-                        _user.value = user
-                    }
+                forumRepository.getUser(userId)?.let { user ->
+                    _user.value = user
                 }
             } catch (e: Exception) {
+                // Handle error
             } finally {
                 _isLoading.value = false
             }
         }
     }
 
-    fun updateUsername(username: String) {
+    fun onSaveChanges(username: String, newPassword: String) {
         viewModelScope.launch {
             _user.value?.let { currentUser ->
+                _isLoading.value = true
                 try {
-                    val updatedUser = currentUser.copy(username = username)
-                    forumRepository.createUser(updatedUser)
-                    _user.value = updatedUser
-                } catch (e: Exception) {
-                }
-            }
-        }
-    }
+                    if (currentUser.username != username) {
+                        val updatedUser = currentUser.copy(username = username)
+                        val success = forumRepository.updateUser(updatedUser)
+                        if (success) {
+                            _user.value = updatedUser
+                        }
+                    }
 
-    fun updatePassword(newPassword: String) {
-        viewModelScope.launch {
-            _user.value?.let { currentUser ->
-                try {
-                    val success = forumRepository.updatePassword(currentUser.id, newPassword)
-                    if (success) {
-                    } else {
+                    if (newPassword.isNotEmpty()) {
+                        forumRepository.updatePassword(currentUser.id, newPassword)
                     }
                 } catch (e: Exception) {
+                    // Handle error
+                } finally {
+                    _isLoading.value = false
                 }
             }
         }
     }
 
-    fun logout() {
+    fun logout(onLogout: () -> Unit) {
         authManager.logout()
         _user.value = null
+        onLogout()
     }
 }

@@ -35,7 +35,7 @@ class AuthManager @Inject constructor() {
             if (result.user != null) {
                 _currentUserId.value = result.user!!.uid
                 _isLoggedIn.value = true
-                AuthResult.Success("Login successful")
+                AuthResult.Success(result.user!!.uid, "Login successful")
             } else {
                 AuthResult.Error("Login failed")
             }
@@ -51,12 +51,21 @@ class AuthManager @Inject constructor() {
             if (result.user != null) {
                 _currentUserId.value = result.user!!.uid
                 _isLoggedIn.value = true
-                AuthResult.Success("Registration successful")
+                AuthResult.Success(result.user!!.uid, "Registration successful")
             } else {
                 AuthResult.Error("Registration failed")
             }
         } catch (e: Exception) {
             AuthResult.Error("Registration error: ${e.message}")
+        }
+    }
+
+    suspend fun updatePassword(password: String): Boolean {
+        return try {
+            auth.currentUser?.updatePassword(password)?.await()
+            true
+        } catch (e: Exception) {
+            false
         }
     }
 
@@ -68,6 +77,6 @@ class AuthManager @Inject constructor() {
 }
 
 sealed class AuthResult {
-    data class Success(val message: String) : AuthResult()
+    data class Success(val userId: String, val message: String) : AuthResult()
     data class Error(val message: String) : AuthResult()
 }

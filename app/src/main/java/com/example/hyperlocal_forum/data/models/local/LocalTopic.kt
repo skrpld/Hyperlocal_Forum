@@ -5,9 +5,9 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "topics")
 data class LocalTopic(
-    @PrimaryKey(autoGenerate = true)
-    val id: Long = 0,
-    val userId: Long,
+    @PrimaryKey
+    val id: String,
+    val userId: String,
     val latitude: Double,
     val longitude: Double,
     val title: String,
