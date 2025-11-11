@@ -56,7 +56,7 @@ class TopicsViewModel @Inject constructor(
             viewModelScope.launch {
                 _isLoading.value = true
                 try {
-                    forumRepository.findNearbyTopics(location, 10.0).collect { nearbyTopics ->
+                    forumRepository.findNearbyTopics(location, 1.0).collect { nearbyTopics ->
                         _topics.value = nearbyTopics
                         _isLoading.value = false
                     }

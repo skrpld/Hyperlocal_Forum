@@ -1,7 +1,6 @@
 package com.example.hyperlocal_forum.ui.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -11,6 +10,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.hyperlocal_forum.data.AuthManager
 import com.example.hyperlocal_forum.ui.screens.auth.AuthScreen
 import com.example.hyperlocal_forum.ui.screens.auth.AuthViewModel
 import com.example.hyperlocal_forum.ui.screens.profile.ProfileScreen
@@ -21,7 +21,6 @@ import com.example.hyperlocal_forum.ui.screens.topicedit.TopicEditScreen
 import com.example.hyperlocal_forum.ui.screens.topicedit.TopicEditViewModel
 import com.example.hyperlocal_forum.ui.screens.topics.TopicsScreen
 import com.example.hyperlocal_forum.ui.topics.TopicsViewModel
-import com.example.hyperlocal_forum.data.AuthManager
 
 @Composable
 fun ForumNavGraph(
@@ -70,14 +69,13 @@ fun ForumNavGraph(
         ) { backStackEntry ->
             val topicId = backStackEntry.arguments?.getString("topicId")
             if (topicId != null) {
+                // 1. Создаем ViewModel здесь. Hilt привяжет его к этому экрану в графе навигации.
                 val topicDetailViewModel: TopicDetailViewModel = hiltViewModel()
 
-                LaunchedEffect(key1 = topicId) {
-                    topicDetailViewModel.setTopicId(topicId)
-                }
-
+                // 2. Передаем этот экземпляр ViewModel напрямую в экран.
                 TopicDetailScreen(
                     topicId = topicId,
+                    viewModel = topicDetailViewModel, // <-- ВАЖНОЕ ИЗМЕНЕНИЕ
                     onBack = { navController.navigateUp() }
                 )
             }
@@ -87,7 +85,11 @@ fun ForumNavGraph(
             val topicEditViewModel: TopicEditViewModel = hiltViewModel()
             TopicEditScreen(
                 viewModel = topicEditViewModel,
-                onTopicSaved = { navController.navigateUp() },
+                onTopicSaved = { topicId ->
+                    // Корректная навигация после сохранения
+                    navController.popBackStack()
+                    navActions.navigateToTopic(topicId)
+                },
                 onBack = { navController.navigateUp() }
             )
         }

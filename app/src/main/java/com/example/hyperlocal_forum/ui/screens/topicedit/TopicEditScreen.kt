@@ -1,53 +1,84 @@
 package com.example.hyperlocal_forum.ui.screens.topicedit
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import com.google.android.gms.location.LocationServices
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopicEditScreen(
     viewModel: TopicEditViewModel,
     modifier: Modifier = Modifier,
-    onTopicSaved: () -> Unit,
+    onTopicSaved: (String) -> Unit,
     onBack: () -> Unit
 ) {
 
     val title by viewModel.title.collectAsState()
     val content by viewModel.content.collectAsState()
     val isSaving by viewModel.isSaving.collectAsState()
-    val saveSuccess by viewModel.saveSuccess.collectAsState()
+    val createdTopicId by viewModel.createdTopicId.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
     val location by viewModel.location.collectAsState()
 
-    LaunchedEffect(saveSuccess) {
-        if (saveSuccess) {
-            onTopicSaved()
-            viewModel.clearError()
+    val context = LocalContext.current
+    val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val isGranted = permissions.getOrDefault(Manifest.permission.ACCESS_FINE_LOCATION, false) ||
+                permissions.getOrDefault(Manifest.permission.ACCESS_COARSE_LOCATION, false)
+
+        if (isGranted) {
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                fusedLocationClient.lastLocation.addOnSuccessListener { loc ->
+                    loc?.let {
+                        viewModel.setLocation(it.latitude, it.longitude)
+                    }
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        val fineLocationPermission = ContextCompat.checkSelfPermission(
+            context, Manifest.permission.ACCESS_FINE_LOCATION
+        )
+        val coarseLocationPermission = ContextCompat.checkSelfPermission(
+            context, Manifest.permission.ACCESS_COARSE_LOCATION
+        )
+
+        if (fineLocationPermission == PackageManager.PERMISSION_GRANTED || coarseLocationPermission == PackageManager.PERMISSION_GRANTED) {
+            fusedLocationClient.lastLocation.addOnSuccessListener { loc ->
+                loc?.let {
+                    viewModel.setLocation(it.latitude, it.longitude)
+                }
+            }
+        } else {
+            permissionLauncher.launch(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+            )
+        }
+    }
+
+    LaunchedEffect(createdTopicId) {
+        createdTopicId?.let { topicId ->
+            onTopicSaved(topicId)
         }
     }
 
@@ -90,22 +121,20 @@ fun TopicEditScreen(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    Button(
-                        onClick = {
-                            viewModel.setLocation(34.052235, -118.243683)
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = !isSaving
-                    ) {
-                        Text(if (location != null) "Location Set (${location?.latitude}, ${location?.longitude})" else "Set Current Location")
-                    }
-                    Spacer(modifier = Modifier.height(16.dp))
-
                     errorMessage?.let {
                         Text(
                             text = it,
-                            color = Color.Red,
+                            color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
+
+                    if (location == null && !isSaving) {
+                        Text(
+                            text = "Location access is required to create a topic. Please grant permission.",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
                             modifier = Modifier.padding(bottom = 8.dp)
                         )
                     }
@@ -113,7 +142,7 @@ fun TopicEditScreen(
                     Button(
                         onClick = { viewModel.saveTopic() },
                         modifier = Modifier.fillMaxWidth(),
-                        enabled = !isSaving
+                        enabled = !isSaving && location != null
                     ) {
                         if (isSaving) {
                             CircularProgressIndicator(

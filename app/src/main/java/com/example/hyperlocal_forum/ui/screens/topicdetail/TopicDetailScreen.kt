@@ -25,20 +25,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.hyperlocal_forum.ui.components.comment.Comments
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopicDetailScreen(
     topicId: String,
+    viewModel: TopicDetailViewModel, // <-- УБРАНО ЗНАЧЕНИЕ ПО УМОЛЧАНИЮ hiltViewModel()
     modifier: Modifier = Modifier,
-    onBack: () -> Unit,
-    viewModel: TopicDetailViewModel = hiltViewModel()
+    onBack: () -> Unit
 ) {
     val topicDetailState by viewModel.topicDetailState.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
 
+    // Этот LaunchedEffect теперь будет работать с правильным, единственным экземпляром ViewModel
     LaunchedEffect(topicId) {
         viewModel.setTopicId(topicId)
     }
@@ -134,12 +134,16 @@ private fun TopicHeader(title: String, content: String) {
     }
 }
 
+// Preview может сломаться, т.к. требует ViewModel.
+// Его нужно будет либо удалить, либо создать для него поддельную ViewModel, если он вам нужен.
+/*
 @Preview
 @Composable
 fun TopicDetailScreenPreview() {
-    TopicDetailScreen(topicId = "1", onBack = {})
+    // Эта превью больше не будет работать без ViewModel.
+    // TopicDetailScreen(topicId = "1", onBack = {})
 }
-
+*/
 @Preview
 @Composable
 fun TopicHeaderPreview() {

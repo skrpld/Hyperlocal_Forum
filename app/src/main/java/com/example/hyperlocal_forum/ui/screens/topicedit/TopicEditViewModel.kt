@@ -31,8 +31,8 @@ class TopicEditViewModel @Inject constructor(
     private val _isSaving = MutableStateFlow(false)
     val isSaving: StateFlow<Boolean> = _isSaving.asStateFlow()
 
-    private val _saveSuccess = MutableStateFlow(false)
-    val saveSuccess: StateFlow<Boolean> = _saveSuccess.asStateFlow()
+    private val _createdTopicId = MutableStateFlow<String?>(null)
+    val createdTopicId: StateFlow<String?> = _createdTopicId.asStateFlow()
 
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
@@ -71,9 +71,9 @@ class TopicEditViewModel @Inject constructor(
                     title = _title.value,
                     content = _content.value
                 )
-                forumRepository.createTopic(topic)
+                val newTopicId = forumRepository.createTopic(topic)
                 _isSaving.value = false
-                _saveSuccess.value = true
+                _createdTopicId.value = newTopicId
             } catch (e: Exception) {
                 _isSaving.value = false
                 _errorMessage.value = "Failed to save topic: ${e.message}"

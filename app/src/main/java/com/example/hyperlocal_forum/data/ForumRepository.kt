@@ -15,12 +15,9 @@ import com.google.firebase.firestore.GeoPoint
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.tasks.await
-import kotlin.math.atan2
-import kotlin.math.cos
-import kotlin.math.sin
-import kotlin.math.sqrt
 
 class ForumRepository(
     private val forumDao: ForumDao
@@ -32,12 +29,15 @@ class ForumRepository(
     private val usersCollection = db.collection("users")
 
     suspend fun createTopic(topic: Topic): String {
+        val geohash = GeoUtils.getGeoHashForLocation(topic.location)
+
         val topicData = hashMapOf(
             "userId" to topic.userId,
             "location" to GeoPoint(topic.location.latitude, topic.location.longitude),
             "title" to topic.title,
             "content" to topic.content,
-            "timestamp" to topic.timestamp
+            "timestamp" to topic.timestamp,
+            "geohash" to geohash
         )
 
         val document = topicsCollection.add(topicData).await()
@@ -63,16 +63,21 @@ class ForumRepository(
                 .get()
                 .await()
 
-            val topics = snapshot.documents.map { doc ->
-                val geoPoint = doc.getGeoPoint("location")!!
-                Topic(
-                    id = doc.id,
-                    userId = doc.getString("userId") ?: "",
-                    location = GeoCoordinates(geoPoint.latitude, geoPoint.longitude),
-                    title = doc.getString("title") ?: "",
-                    content = doc.getString("content") ?: "",
-                    timestamp = doc.getTimestamp("timestamp")!!
-                )
+            val topics = snapshot.documents.mapNotNull { doc ->
+                val geoPoint = doc.getGeoPoint("location")
+                val timestamp = doc.getTimestamp("timestamp")
+                if (geoPoint != null && timestamp != null) {
+                    Topic(
+                        id = doc.id,
+                        userId = doc.getString("userId") ?: "",
+                        location = GeoCoordinates(geoPoint.latitude, geoPoint.longitude),
+                        title = doc.getString("title") ?: "",
+                        content = doc.getString("content") ?: "",
+                        timestamp = timestamp
+                    )
+                } else {
+                    null
+                }
             }
             emit(topics)
         } catch (e: Exception) {
@@ -90,28 +95,35 @@ class ForumRepository(
         }
     }
 
-    fun findNearbyTopics(userLocation: GeoCoordinates, radiusInKm: Double = 10.0): Flow<List<Topic>> = flow {
+    fun findNearbyTopics(userLocation: GeoCoordinates, radiusInKm: Double = 1.0): Flow<List<Topic>> = flow {
         try {
+            val nearbyHashes = GeoUtils.getNearbyGeoHashes(userLocation, radiusInKm)
+
             val snapshot = topicsCollection
-                .orderBy("timestamp", Query.Direction.DESCENDING)
+                .whereIn("geohash", nearbyHashes)
                 .get()
                 .await()
 
-            val allTopics = snapshot.documents.map { doc ->
-                val geoPoint = doc.getGeoPoint("location")!!
-                Topic(
-                    id = doc.id,
-                    userId = doc.getString("userId") ?: "",
-                    location = GeoCoordinates(geoPoint.latitude, geoPoint.longitude),
-                    title = doc.getString("title") ?: "",
-                    content = doc.getString("content") ?: "",
-                    timestamp = doc.getTimestamp("timestamp")!!
-                )
+            val topicsFromGeohashQuery = snapshot.documents.mapNotNull { doc ->
+                val geoPoint = doc.getGeoPoint("location")
+                val timestamp = doc.getTimestamp("timestamp")
+                if (geoPoint != null && timestamp != null) {
+                    Topic(
+                        id = doc.id,
+                        userId = doc.getString("userId") ?: "",
+                        location = GeoCoordinates(geoPoint.latitude, geoPoint.longitude),
+                        title = doc.getString("title") ?: "",
+                        content = doc.getString("content") ?: "",
+                        timestamp = timestamp
+                    )
+                } else {
+                    null
+                }
             }
 
-            val nearbyTopics = allTopics.filter { topic ->
-                calculateDistance(userLocation, topic.location) <= radiusInKm
-            }
+            val nearbyTopics = topicsFromGeohashQuery.filter { topic ->
+                GeoUtils.distanceBetween(userLocation, topic.location) <= radiusInKm
+            }.sortedByDescending { it.timestamp }
 
             emit(nearbyTopics)
         } catch (e: Exception) {
@@ -164,20 +176,75 @@ class ForumRepository(
                 .get()
                 .await()
 
-            val comments = snapshot.documents.map { doc ->
-                Comment(
-                    id = doc.id,
-                    userId = doc.getString("userId") ?: "",
-                    topicId = doc.getString("topicId") ?: "",
-                    content = doc.getString("content") ?: "",
-                    username = doc.getString("username") ?: "",
-                    timestamp = doc.getTimestamp("timestamp")!!
-                )
+            val comments = snapshot.documents.mapNotNull { doc ->
+                doc.getTimestamp("timestamp")?.let { timestamp ->
+                    Comment(
+                        id = doc.id,
+                        userId = doc.getString("userId") ?: "",
+                        topicId = doc.getString("topicId") ?: "",
+                        content = doc.getString("content") ?: "",
+                        username = doc.getString("username") ?: "",
+                        timestamp = timestamp
+                    )
+                }
             }
             emit(comments)
         } catch (e: Exception) {
             val localComments = forumDao.getTopicWithComments(topicId)
-                .first().comments.map { localComment ->
+                .firstOrNull()?.comments?.map { localComment ->
+                    Comment(
+                        id = localComment.id,
+                        userId = localComment.userId,
+                        topicId = localComment.topicId,
+                        content = localComment.content,
+                        username = localComment.username,
+                        timestamp = Timestamp(localComment.timestamp / 1000, 0)
+                    )
+                } ?: emptyList()
+            emit(localComments)
+        }
+    }
+
+    fun getTopicWithComments(topicId: String): Flow<TopicWithComments> = flow {
+        try {
+            val topicDoc = topicsCollection.document(topicId).get().await()
+
+            if (topicDoc.exists()) {
+                val geoPoint = topicDoc.getGeoPoint("location")
+                val timestamp = topicDoc.getTimestamp("timestamp")
+                val userId = topicDoc.getString("userId")
+                val title = topicDoc.getString("title")
+                val content = topicDoc.getString("content")
+
+                if (geoPoint != null && timestamp != null && userId != null && title != null && content != null) {
+                    val topic = Topic(
+                        id = topicDoc.id,
+                        userId = userId,
+                        location = GeoCoordinates(geoPoint.latitude, geoPoint.longitude),
+                        title = title,
+                        content = content,
+                        timestamp = timestamp
+                    )
+                    val comments = getCommentsForTopic(topicId).firstOrNull() ?: emptyList()
+                    emit(TopicWithComments(topic, comments))
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            val localTopicWithComments = forumDao.getTopicWithComments(topicId).firstOrNull()
+            if (localTopicWithComments != null) {
+                val topic = Topic(
+                    id = localTopicWithComments.topic.id,
+                    userId = localTopicWithComments.topic.userId,
+                    location = GeoCoordinates(
+                        localTopicWithComments.topic.latitude,
+                        localTopicWithComments.topic.longitude
+                    ),
+                    title = localTopicWithComments.topic.title,
+                    content = localTopicWithComments.topic.content,
+                    timestamp = Timestamp(localTopicWithComments.topic.timestamp / 1000, 0)
+                )
+                val comments = localTopicWithComments.comments.map { localComment ->
                     Comment(
                         id = localComment.id,
                         userId = localComment.userId,
@@ -187,50 +254,8 @@ class ForumRepository(
                         timestamp = Timestamp(localComment.timestamp / 1000, 0)
                     )
                 }
-            emit(localComments)
-        }
-    }
-
-    fun getTopicWithComments(topicId: String): Flow<TopicWithComments> = flow {
-        try {
-            val topicDoc = topicsCollection.document(topicId).get().await()
-            val comments = getCommentsForTopic(topicId).first()
-
-            val geoPoint = topicDoc.getGeoPoint("location")!!
-            val topic = Topic(
-                id = topicDoc.id,
-                userId = topicDoc.getString("userId") ?: "",
-                location = GeoCoordinates(geoPoint.latitude, geoPoint.longitude),
-                title = topicDoc.getString("title") ?: "",
-                content = topicDoc.getString("content") ?: "",
-                timestamp = topicDoc.getTimestamp("timestamp")!!
-            )
-
-            emit(TopicWithComments(topic, comments))
-        } catch (e: Exception) {
-            val localTopicWithComments = forumDao.getTopicWithComments(topicId).first()
-            val topic = Topic(
-                id = localTopicWithComments.topic.id,
-                userId = localTopicWithComments.topic.userId,
-                location = GeoCoordinates(
-                    localTopicWithComments.topic.latitude,
-                    localTopicWithComments.topic.longitude
-                ),
-                title = localTopicWithComments.topic.title,
-                content = localTopicWithComments.topic.content,
-                timestamp = Timestamp(localTopicWithComments.topic.timestamp / 1000, 0)
-            )
-            val comments = localTopicWithComments.comments.map { localComment ->
-                Comment(
-                    id = localComment.id,
-                    userId = localComment.userId,
-                    topicId = localComment.topicId,
-                    content = localComment.content,
-                    username = localComment.username,
-                    timestamp = Timestamp(localComment.timestamp / 1000, 0)
-                )
+                emit(TopicWithComments(topic, comments))
             }
-            emit(TopicWithComments(topic, comments))
         }
     }
 
@@ -264,17 +289,22 @@ class ForumRepository(
         try {
             val snapshot = usersCollection.document(userId).get().await()
             return if (snapshot.exists()) {
-                User(
-                    id = snapshot.id,
-                    username = snapshot.getString("username") ?: "",
-                    email = snapshot.getString("email"),
-                    timestamp = snapshot.getTimestamp("timestamp")!!
-                )
+                val timestamp = snapshot.getTimestamp("timestamp")
+                if (timestamp != null) {
+                    User(
+                        id = snapshot.id,
+                        username = snapshot.getString("username") ?: "Unknown",
+                        email = snapshot.getString("email"),
+                        timestamp = timestamp
+                    )
+                } else {
+                    null
+                }
             } else {
                 null
             }
         } catch (e: Exception) {
-            return forumDao.getUser(userId).first()?.let { localUser ->
+            return forumDao.getUser(userId).firstOrNull()?.let { localUser ->
                 User(
                     id = localUser.id,
                     username = localUser.username,
@@ -294,12 +324,17 @@ class ForumRepository(
                 .await()
 
             return snapshot.documents.firstOrNull()?.let { doc ->
-                User(
-                    id = doc.id,
-                    username = doc.getString("username") ?: "",
-                    email = doc.getString("email"),
-                    timestamp = doc.getTimestamp("timestamp")!!
-                )
+                val timestamp = doc.getTimestamp("timestamp")
+                if (timestamp != null) {
+                    User(
+                        id = doc.id,
+                        username = doc.getString("username") ?: "",
+                        email = doc.getString("email"),
+                        timestamp = timestamp
+                    )
+                } else {
+                    null
+                }
             }
         } catch (e: Exception) {
             return forumDao.getUserByUsername(username)?.let { localUser ->
@@ -347,20 +382,5 @@ class ForumRepository(
             e.printStackTrace()
             false
         }
-    }
-
-    private fun calculateDistance(loc1: GeoCoordinates, loc2: GeoCoordinates): Double {
-        val earthRadius = 6371.0 // km
-
-        val dLat = Math.toRadians(loc2.latitude - loc1.latitude)
-        val dLon = Math.toRadians(loc2.longitude - loc1.longitude)
-
-        val a = sin(dLat / 2) * sin(dLat / 2) +
-                cos(Math.toRadians(loc1.latitude)) * cos(Math.toRadians(loc2.latitude)) *
-                sin(dLon / 2) * sin(dLon / 2)
-
-        val c = 2 * atan2(sqrt(a), sqrt(1 - a))
-
-        return earthRadius * c
     }
 }
