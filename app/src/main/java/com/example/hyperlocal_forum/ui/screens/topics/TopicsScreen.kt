@@ -32,20 +32,33 @@ import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.hyperlocal_forum.data.GeoCoordinates
 import com.example.hyperlocal_forum.data.models.firestore.Topic
 import com.example.hyperlocal_forum.ui.topics.TopicsViewModel
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.firebase.Timestamp
 import java.text.SimpleDateFormat
 import java.util.Locale
+import android.Manifest
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
+import androidx.compose.material3.*
+import androidx.compose.runtime.saveable.rememberSaveable
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
 fun TopicsScreen(
     viewModel: TopicsViewModel,
@@ -54,11 +67,29 @@ fun TopicsScreen(
     navigateToCreateTopic: () -> Unit,
     navigateToProfile: () -> Unit
 ) {
-
     val topics by viewModel.topics.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val showNearbyOnly by viewModel.showNearbyOnly.collectAsState()
     val userLocation by viewModel.userLocation.collectAsState()
+    val context = LocalContext.current
+
+    val locationPermissionsState = rememberMultiplePermissionsState(
+        listOf(
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.ACCESS_FINE_LOCATION,
+        )
+    )
+
+    var showRationaleDialog by remember { mutableStateOf(false) }
+    var showSettingsDialog by remember { mutableStateOf(false) }
+    var permissionRequestLaunched by rememberSaveable { mutableStateOf(false) }
+
+    LaunchedEffect(locationPermissionsState.allPermissionsGranted, permissionRequestLaunched) {
+        if (locationPermissionsState.allPermissionsGranted && permissionRequestLaunched) {
+            viewModel.switchToNearbyFilter()
+            permissionRequestLaunched = false
+        }
+    }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -85,8 +116,23 @@ fun TopicsScreen(
             TopicFilterSection(
                 showNearbyOnly = showNearbyOnly,
                 onFilterChange = { showNearby ->
-                    if (showNearby && userLocation != null) {
-                        viewModel.loadNearbyTopics(userLocation!!)
+                    if (showNearby) {
+                        val isPermanentlyDenied = !locationPermissionsState.allPermissionsGranted && !locationPermissionsState.shouldShowRationale
+                        when {
+                            locationPermissionsState.allPermissionsGranted -> {
+                                viewModel.switchToNearbyFilter()
+                            }
+                            locationPermissionsState.shouldShowRationale -> {
+                                showRationaleDialog = true
+                            }
+                            permissionRequestLaunched && isPermanentlyDenied -> {
+                                showSettingsDialog = true
+                            }
+                            else -> {
+                                permissionRequestLaunched = true
+                                locationPermissionsState.launchMultiplePermissionRequest()
+                            }
+                        }
                     } else {
                         viewModel.loadAllTopics()
                     }
@@ -96,6 +142,30 @@ fun TopicsScreen(
                     .fillMaxWidth()
                     .padding(16.dp)
             )
+
+            if (showRationaleDialog) {
+                RationaleDialog(
+                    onDismiss = { showRationaleDialog = false },
+                    onConfirm = {
+                        showRationaleDialog = false
+                        permissionRequestLaunched = true
+                        locationPermissionsState.launchMultiplePermissionRequest()
+                    }
+                )
+            }
+
+            if (showSettingsDialog) {
+                PermanentlyDeniedDialog(
+                    onDismiss = { showSettingsDialog = false },
+                    onGoToSettings = {
+                        showSettingsDialog = false
+                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                        val uri = Uri.fromParts("package", context.packageName, null)
+                        intent.data = uri
+                        context.startActivity(intent)
+                    }
+                )
+            }
 
             if (isLoading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -146,7 +216,7 @@ fun TopicFilterSection(
                         modifier = Modifier.size(SegmentedButtonDefaults.IconSize)
                     )
                 },
-                enabled = userLocation != null
+                enabled = true
             ) {
                 Text("Nearby")
             }
@@ -162,6 +232,29 @@ fun TopicFilterSection(
         }
     }
 }
+
+@Composable
+private fun RationaleDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Location Permission Required") },
+        text = { Text("To show topics near you, this app needs access to your device's location.") },
+        confirmButton = { Button(onClick = onConfirm) { Text("Grant") } },
+        dismissButton = { Button(onClick = onDismiss) { Text("Cancel") } }
+    )
+}
+
+@Composable
+private fun PermanentlyDeniedDialog(onDismiss: () -> Unit, onGoToSettings: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Permission Denied") },
+        text = { Text("Location permission was permanently denied. You can grant it in the app settings.") },
+        confirmButton = { Button(onClick = onGoToSettings) { Text("Go to Settings") } },
+        dismissButton = { Button(onClick = onDismiss) { Text("Cancel") } }
+    )
+}
+
 
 @Composable
 fun TopicList(

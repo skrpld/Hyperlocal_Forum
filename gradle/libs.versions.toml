@@ -1,4 +1,5 @@
 [versions]
+accompanistPermissions = "0.37.3"
 agp = "8.13.0"
 assistedInjectAnnotationsDagger2 = "0.8.1"
 assistedInjectProcessorDagger2 = "0.8.1"
@@ -37,14 +38,17 @@ playServicesAuthVersion = "20.7.0"
 playServicesBase = "18.4.0"
 playServicesBaseVersion = "18.3.0"
 playServicesIdentity = "18.0.2"
+playServicesLocationVersion = "21.2.0"
 roomRuntime = "2.8.3"
 roomVersion = "2.8.1"
 firebaseCrashlytics = "20.0.3"
 googleGmsGoogleServices = "4.4.4"
 googleFirebaseCrashlytics = "3.0.6"
 roomKtx = "2.8.3"
+playServicesLocation = "21.3.0"
 
 [libraries]
+accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanistPermissions" }
 androidx-compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-core-testing = { module = "androidx.arch.core:core-testing", version.ref = "coreTesting" }
@@ -99,7 +103,9 @@ play-services-auth-v2070 = { module = "com.google.android.gms:play-services-auth
 play-services-base = { module = "com.google.android.gms:play-services-base", version.ref = "playServicesBase" }
 play-services-base-v1830 = { module = "com.google.android.gms:play-services-base", version.ref = "playServicesBaseVersion" }
 play-services-identity = { module = "com.google.android.gms:play-services-identity", version.ref = "playServicesIdentity" }
+play-services-location-v2120 = { module = "com.google.android.gms:play-services-location", version.ref = "playServicesLocationVersion" }
 room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "roomKtx" }
+play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -25,6 +25,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -40,10 +41,13 @@ fun TopicEditScreen(
     val content by viewModel.content.collectAsState()
     val isSaving by viewModel.isSaving.collectAsState()
     val saveSuccess by viewModel.saveSuccess.collectAsState()
+    val errorMessage by viewModel.errorMessage.collectAsState()
+    val location by viewModel.location.collectAsState()
 
     LaunchedEffect(saveSuccess) {
         if (saveSuccess) {
             onTopicSaved()
+            viewModel.clearError()
         }
     }
 
@@ -85,6 +89,27 @@ fun TopicEditScreen(
                         minLines = 5
                     )
                     Spacer(modifier = Modifier.height(16.dp))
+
+                    Button(
+                        onClick = {
+                            viewModel.setLocation(34.052235, -118.243683)
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = !isSaving
+                    ) {
+                        Text(if (location != null) "Location Set (${location?.latitude}, ${location?.longitude})" else "Set Current Location")
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    errorMessage?.let {
+                        Text(
+                            text = it,
+                            color = Color.Red,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
+
                     Button(
                         onClick = { viewModel.saveTopic() },
                         modifier = Modifier.fillMaxWidth(),

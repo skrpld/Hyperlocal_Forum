@@ -1,5 +1,7 @@
 package com.example.hyperlocal_forum.ui.topics
 
+import android.annotation.SuppressLint
+import android.location.Location
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.hyperlocal_forum.data.ForumRepository
@@ -11,10 +13,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import com.google.android.gms.location.FusedLocationProviderClient
 
 @HiltViewModel
 class TopicsViewModel @Inject constructor(
-    private val forumRepository: ForumRepository
+    private val forumRepository: ForumRepository,
+    private val fusedLocationClient: FusedLocationProviderClient
 ) : ViewModel() {
 
     private val _isLoading = MutableStateFlow(true)
@@ -30,7 +34,7 @@ class TopicsViewModel @Inject constructor(
     val showNearbyOnly: StateFlow<Boolean> = _showNearbyOnly.asStateFlow()
 
     init {
-        loadTopics()
+        loadAllTopics()
     }
 
     private fun loadTopics() {
@@ -47,39 +51,62 @@ class TopicsViewModel @Inject constructor(
         }
     }
 
-    fun loadNearbyTopics(location: GeoCoordinates) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            _userLocation.value = location
-            _showNearbyOnly.value = true
-
-            try {
-                forumRepository.findNearbyTopics(location, 10.0).collect { nearbyTopics ->
-                    _topics.value = nearbyTopics
+    private fun loadNearbyTopics() {
+        _userLocation.value?.let { location ->
+            viewModelScope.launch {
+                _isLoading.value = true
+                try {
+                    forumRepository.findNearbyTopics(location, 10.0).collect { nearbyTopics ->
+                        _topics.value = nearbyTopics
+                        _isLoading.value = false
+                    }
+                } catch (e: Exception) {
                     _isLoading.value = false
                 }
-            } catch (e: Exception) {
-                _isLoading.value = false
             }
+        } ?: run {
+            _isLoading.value = false
         }
     }
 
     fun loadAllTopics() {
-        _showNearbyOnly.value = false
+        if (_showNearbyOnly.value) {
+            _showNearbyOnly.value = false
+        }
         loadTopics()
     }
 
-    fun refreshTopics() {
-        if (_showNearbyOnly.value && _userLocation.value != null) {
-            _userLocation.value?.let { location ->
-                loadNearbyTopics(location)
+    fun switchToNearbyFilter() {
+        _showNearbyOnly.value = true
+        updateUserLocation()
+    }
+
+    @SuppressLint("MissingPermission")
+    fun updateUserLocation() {
+        if (_showNearbyOnly.value) {
+            _isLoading.value = true
+        }
+        fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
+            location?.let {
+                _userLocation.value = GeoCoordinates(it.latitude, it.longitude)
+                if (_showNearbyOnly.value) {
+                    loadNearbyTopics()
+                }
+            } ?: run {
+                _isLoading.value = false
+                _userLocation.value = null
             }
-        } else {
-            loadTopics()
+        }.addOnFailureListener {
+            _isLoading.value = false
+            _userLocation.value = null
         }
     }
 
-    fun setUserLocation(location: GeoCoordinates) {
-        _userLocation.value = location
+    fun refreshTopics() {
+        if (_showNearbyOnly.value) {
+            updateUserLocation()
+        } else {
+            loadTopics()
+        }
     }
 }
