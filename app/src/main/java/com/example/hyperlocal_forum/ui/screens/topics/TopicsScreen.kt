@@ -15,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -42,6 +43,7 @@ fun TopicsScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val showNearbyOnly by viewModel.showNearbyOnly.collectAsState()
     val userLocation by viewModel.userLocation.collectAsState()
+    val errorMessage by viewModel.errorMessage.collectAsState()
     val context = LocalContext.current
 
     val locationPermissionsState = rememberMultiplePermissionsState(
@@ -66,7 +68,20 @@ fun TopicsScreen(
         modifier = modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text("Topics") },
+                title = {
+                    Column {
+                        Text("Topics")
+                        errorMessage?.let { message ->
+                            Text(
+                                text = message,
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodySmall,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                },
                 actions = {
                     IconButton(onClick = navigateToProfile) {
                         Icon(Icons.Default.Person, contentDescription = "Profile")

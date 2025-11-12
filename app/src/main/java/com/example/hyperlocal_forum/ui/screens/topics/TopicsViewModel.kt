@@ -8,18 +8,21 @@ import com.example.hyperlocal_forum.data.ForumRepository
 import com.example.hyperlocal_forum.data.GeoCoordinates
 import com.example.hyperlocal_forum.data.models.firestore.Topic
 import com.example.hyperlocal_forum.data.models.firestore.User
+import com.example.hyperlocal_forum.utils.ConnectivityObserver
 import com.google.android.gms.location.FusedLocationProviderClient
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class TopicsViewModel @Inject constructor(
     private val forumRepository: ForumRepository,
-    private val fusedLocationClient: FusedLocationProviderClient
+    private val fusedLocationClient: FusedLocationProviderClient,
+    private val connectivityObserver: ConnectivityObserver
 ) : ViewModel() {
 
     private val _isLoading = MutableStateFlow(true)
@@ -37,8 +40,11 @@ class TopicsViewModel @Inject constructor(
     private val _showNearbyOnly = MutableStateFlow(false)
     val showNearbyOnly: StateFlow<Boolean> = _showNearbyOnly.asStateFlow()
 
+    private val _errorMessage = MutableStateFlow<String?>(null)
+    val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
+
     init {
-        loadAllTopics()
+        refreshTopics()
     }
 
     private fun loadTopics() {
@@ -88,12 +94,12 @@ class TopicsViewModel @Inject constructor(
         if (_showNearbyOnly.value) {
             _showNearbyOnly.value = false
         }
-        loadTopics()
+        refreshTopics()
     }
 
     fun switchToNearbyFilter() {
         _showNearbyOnly.value = true
-        updateUserLocation()
+        refreshTopics()
     }
 
     @SuppressLint("MissingPermission")
@@ -118,10 +124,26 @@ class TopicsViewModel @Inject constructor(
     }
 
     fun refreshTopics() {
-        if (_showNearbyOnly.value) {
-            updateUserLocation()
-        } else {
-            loadTopics()
+        viewModelScope.launch {
+            _isLoading.value = true
+
+            val networkStatus = connectivityObserver.observe().first()
+            if (networkStatus == ConnectivityObserver.Status.Unavailable || networkStatus == ConnectivityObserver.Status.Lost) {
+                _errorMessage.value = "No internet connection."
+            } else {
+                val isServerAvailable = forumRepository.checkServerAvailability()
+                if (!isServerAvailable) {
+                    _errorMessage.value = "Server is unavailable"
+                } else {
+                    _errorMessage.value = null
+                }
+            }
+
+            if (_showNearbyOnly.value) {
+                updateUserLocation()
+            } else {
+                loadTopics()
+            }
         }
     }
 }

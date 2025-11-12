@@ -1,10 +1,12 @@
 package com.example.hyperlocal_forum.di
 
 import android.content.Context
-import com.example.hyperlocal_forum.data.ForumDatabase
-import com.example.hyperlocal_forum.data.ForumDao
-import com.example.hyperlocal_forum.data.ForumRepository
 import com.example.hyperlocal_forum.data.AuthManager
+import com.example.hyperlocal_forum.data.ForumDao
+import com.example.hyperlocal_forum.data.ForumDatabase
+import com.example.hyperlocal_forum.data.ForumRepository
+import com.example.hyperlocal_forum.utils.ConnectivityObserver
+import com.example.hyperlocal_forum.utils.NetworkConnectivityObserver
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -15,6 +17,12 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
+
+    @Provides
+    @Singleton
+    fun provideConnectivityObserver(@ApplicationContext context: Context): ConnectivityObserver {
+        return NetworkConnectivityObserver(context)
+    }
 
     @Provides
     @Singleton

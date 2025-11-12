@@ -30,6 +30,19 @@ class ForumRepository(
     private val commentsCollection = db.collection("comments")
     private val usersCollection = db.collection("users")
 
+    // НОВЫЙ МЕТОД для проверки доступности сервера
+    suspend fun checkServerAvailability(): Boolean {
+        return try {
+            // Попытка выполнить очень легковесную операцию чтения из Firestore.
+            // Получение несуществующего документа — это дешевый способ проверить соединение.
+            db.collection("connectivity_check").document("one").get().await()
+            true
+        } catch (e: Exception) {
+            // Любое исключение здесь, скорее всего, означает, что мы не можем связаться с сервером.
+            false
+        }
+    }
+
     suspend fun createTopic(topic: Topic): String {
         val geohash = GeoUtils.getGeoHashForLocation(topic.location)
 
@@ -317,7 +330,6 @@ class ForumRepository(
         }
     }
 
-    // НОВЫЙ МЕТОД
     suspend fun getUsers(userIds: List<String>): Map<String, User> {
         if (userIds.isEmpty()) {
             return emptyMap()
