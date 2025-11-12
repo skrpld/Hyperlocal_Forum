@@ -44,6 +44,7 @@ fun TopicsScreen(
     val showNearbyOnly by viewModel.showNearbyOnly.collectAsState()
     val userLocation by viewModel.userLocation.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
+    val searchRadius by viewModel.searchRadius.collectAsState()
     val context = LocalContext.current
 
     val locationPermissionsState = rememberMultiplePermissionsState(
@@ -124,6 +125,8 @@ fun TopicsScreen(
                     }
                 },
                 userLocation = userLocation,
+                selectedRadius = searchRadius,
+                onRadiusSelected = { radius -> viewModel.setSearchRadius(radius) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
@@ -175,40 +178,62 @@ fun TopicFilterSection(
     showNearbyOnly: Boolean,
     onFilterChange: (Boolean) -> Unit,
     userLocation: GeoCoordinates?,
+    selectedRadius: Double,
+    onRadiusSelected: (Double) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(modifier = modifier) {
-        SingleChoiceSegmentedButtonRow {
-            SegmentedButton(
-                selected = !showNearbyOnly,
-                onClick = { onFilterChange(false) },
-                shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
-                icon = {
-                    Icon(
-                        Icons.Default.Public,
-                        contentDescription = "All topics",
-                        modifier = Modifier.size(SegmentedButtonDefaults.IconSize)
-                    )
+    val radiusOptions = listOf(0.5, 2.0, 5.0, 10.0, 20.0)
+
+    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            SingleChoiceSegmentedButtonRow {
+                SegmentedButton(
+                    selected = !showNearbyOnly,
+                    onClick = { onFilterChange(false) },
+                    shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+                    icon = {
+                        Icon(
+                            Icons.Default.Public,
+                            contentDescription = "All topics",
+                            modifier = Modifier.size(SegmentedButtonDefaults.IconSize)
+                        )
+                    }
+                ) {
+                    Text("All")
                 }
-            ) {
-                Text("All")
-            }
-            SegmentedButton(
-                selected = showNearbyOnly,
-                onClick = { onFilterChange(true) },
-                shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
-                icon = {
-                    Icon(
-                        Icons.Default.LocationOn,
-                        contentDescription = "Nearby topics",
-                        modifier = Modifier.size(SegmentedButtonDefaults.IconSize)
-                    )
-                },
-                enabled = true
-            ) {
-                Text("Nearby")
+                SegmentedButton(
+                    selected = showNearbyOnly,
+                    onClick = { onFilterChange(true) },
+                    shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+                    icon = {
+                        Icon(
+                            Icons.Default.LocationOn,
+                            contentDescription = "Nearby topics",
+                            modifier = Modifier.size(SegmentedButtonDefaults.IconSize)
+                        )
+                    },
+                    enabled = true
+                ) {
+                    Text("Nearby")
+                }
             }
         }
+
+        if (showNearbyOnly) {
+            Spacer(modifier = Modifier.height(8.dp))
+            SingleChoiceSegmentedButtonRow {
+                radiusOptions.forEachIndexed { index, radius ->
+                    SegmentedButton(
+                        selected = selectedRadius == radius,
+                        onClick = { onRadiusSelected(radius) },
+                        shape = SegmentedButtonDefaults.itemShape(index = index, count = radiusOptions.size)
+                    ) {
+                        Text("${radius}km")
+                    }
+                }
+            }
+        }
+
 
         if (showNearbyOnly && userLocation == null) {
             Text(
@@ -220,6 +245,7 @@ fun TopicFilterSection(
         }
     }
 }
+
 
 @Composable
 private fun RationaleDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {

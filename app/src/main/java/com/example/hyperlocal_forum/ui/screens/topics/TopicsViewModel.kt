@@ -2,6 +2,7 @@ package com.example.hyperlocal_forum.ui.topics
 
 import android.annotation.SuppressLint
 import android.location.Location
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.hyperlocal_forum.data.ForumRepository
@@ -17,6 +18,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+private const val TAG = "TopicsViewModel"
 
 @HiltViewModel
 class TopicsViewModel @Inject constructor(
@@ -40,6 +43,9 @@ class TopicsViewModel @Inject constructor(
     private val _showNearbyOnly = MutableStateFlow(false)
     val showNearbyOnly: StateFlow<Boolean> = _showNearbyOnly.asStateFlow()
 
+    private val _searchRadius = MutableStateFlow(5.0)
+    val searchRadius: StateFlow<Double> = _searchRadius.asStateFlow()
+
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
@@ -50,14 +56,17 @@ class TopicsViewModel @Inject constructor(
     private fun loadTopics() {
         viewModelScope.launch {
             _isLoading.value = true
+            Log.d(TAG, "Loading all topics...")
             try {
                 forumRepository.getAllTopics().collect { topicsList ->
                     _topics.value = topicsList
                     updateUsersMap(topicsList)
+                    Log.d(TAG, "Loaded ${topicsList.size} topics in total.")
                     _isLoading.value = false
                 }
             } catch (e: Exception) {
                 _isLoading.value = false
+                Log.e(TAG, "Error loading all topics", e)
             }
         }
     }
@@ -66,20 +75,25 @@ class TopicsViewModel @Inject constructor(
         _userLocation.value?.let { location ->
             viewModelScope.launch {
                 _isLoading.value = true
+                Log.d(TAG, "Loading nearby topics for location: $location with radius ${_searchRadius.value} km")
                 try {
-                    forumRepository.findNearbyTopics(location, 1.0).collect { nearbyTopics ->
+                    forumRepository.findNearbyTopics(location, _searchRadius.value).collect { nearbyTopics ->
                         _topics.value = nearbyTopics
                         updateUsersMap(nearbyTopics)
+                        Log.d(TAG, "Found ${nearbyTopics.size} nearby topics.")
                         _isLoading.value = false
                     }
                 } catch (e: Exception) {
                     _isLoading.value = false
+                    Log.e(TAG, "Error loading nearby topics", e)
                 }
             }
         } ?: run {
             _isLoading.value = false
+            Log.w(TAG, "Cannot load nearby topics because user location is null.")
         }
     }
+
 
     private suspend fun updateUsersMap(topics: List<Topic>) {
         if (topics.isEmpty()) {
@@ -98,8 +112,18 @@ class TopicsViewModel @Inject constructor(
     }
 
     fun switchToNearbyFilter() {
+        Log.d(TAG, "Switching to nearby filter...")
         _showNearbyOnly.value = true
         refreshTopics()
+    }
+
+    fun setSearchRadius(radius: Double) {
+        if (_searchRadius.value != radius) {
+            _searchRadius.value = radius
+            if (_showNearbyOnly.value) {
+                refreshTopics()
+            }
+        }
     }
 
     @SuppressLint("MissingPermission")
@@ -107,19 +131,23 @@ class TopicsViewModel @Inject constructor(
         if (_showNearbyOnly.value) {
             _isLoading.value = true
         }
+        Log.d(TAG, "Attempting to update user location...")
         fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
             location?.let {
                 _userLocation.value = GeoCoordinates(it.latitude, it.longitude)
+                Log.d(TAG, "User location updated successfully: ${_userLocation.value}")
                 if (_showNearbyOnly.value) {
                     loadNearbyTopics()
                 }
             } ?: run {
                 _isLoading.value = false
                 _userLocation.value = null
+                Log.w(TAG, "Failed to get user location, it was null.")
             }
         }.addOnFailureListener {
             _isLoading.value = false
             _userLocation.value = null
+            Log.e(TAG, "Failed to get user location with an exception.", it)
         }
     }
 

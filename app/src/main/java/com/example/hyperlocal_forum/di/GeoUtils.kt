@@ -121,15 +121,26 @@ object GeoUtils {
         return GeoCoordinates((latRange[0] + latRange[1]) / 2, (lonRange[0] + lonRange[1]) / 2)
     }
 
-    private fun getPrecisionForRadius(radiusKm: Double): Int {
+    /**
+     * Определяет оптимальную точность (длину) геохеша на основе радиуса поиска.
+     *
+     * Чем больше радиус, тем ниже должна быть точность (короче строка геохеша),
+     * чтобы охватить большую площадь. Мы выбираем точность так, чтобы размеры
+     * ячейки геохеша были сопоставимы с искомым радиусом.
+     *
+     * Размеры ячеек геохеша (приблизительные):
+     * - precision 6: ~1.2км x 600м
+     * - precision 5: ~4.9км x 4.9км
+     * - precision 4: ~39км x 19.5км
+     * - precision 3: ~156км x 156км
+     */
+    fun getPrecisionForRadius(radiusKm: Double): Int {
         return when {
-            radiusKm <= 0.075 -> 9
-            radiusKm <= 0.6 -> 8
-            radiusKm <= 2.4 -> 7 // 1km
-            radiusKm <= 20 -> 6
-            radiusKm <= 78 -> 5
-            radiusKm <= 630 -> 4
-            else -> 3
+            radiusKm <= 0.5 -> 6
+            radiusKm <= 5.0 -> 5
+            radiusKm <= 20.0 -> 4
+            radiusKm <= 150 -> 3
+            else -> 2
         }
     }
 }

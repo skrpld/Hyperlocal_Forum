@@ -1,7 +1,7 @@
 package com.example.hyperlocal_forum.data
 
+import android.util.Log
 import com.example.hyperlocal_forum.data.models.firestore.Comment
-import com.example.hyperlocal_forum.data.GeoCoordinates
 import com.example.hyperlocal_forum.data.models.firestore.Topic
 import com.example.hyperlocal_forum.data.models.firestore.TopicWithComments
 import com.example.hyperlocal_forum.data.models.firestore.User
@@ -21,6 +21,8 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.tasks.await
 
+private const val TAG = "ForumRepository"
+
 class ForumRepository(
     private val forumDao: ForumDao
 ) {
@@ -30,21 +32,25 @@ class ForumRepository(
     private val commentsCollection = db.collection("comments")
     private val usersCollection = db.collection("users")
 
-    // НОВЫЙ МЕТОД для проверки доступности сервера
     suspend fun checkServerAvailability(): Boolean {
         return try {
-            // Попытка выполнить очень легковесную операцию чтения из Firestore.
-            // Получение несуществующего документа — это дешевый способ проверить соединение.
             db.collection("connectivity_check").document("one").get().await()
             true
         } catch (e: Exception) {
-            // Любое исключение здесь, скорее всего, означает, что мы не можем связаться с сервером.
             false
         }
     }
 
     suspend fun createTopic(topic: Topic): String {
-        val geohash = GeoUtils.getGeoHashForLocation(topic.location)
+        val fullGeohash = GeoUtils.getGeoHashForLocation(topic.location, 9)
+
+        val geohashes = mutableMapOf<String, String>()
+        // ИЗМЕНЕНИЕ: Сохраняем геохеши для всех уровней точности от 9 до 2.
+        // Это гарантирует, что запросы по любому из наших радиусов будут работать.
+        for (precision in 9 downTo 2) {
+            geohashes["p$precision"] = fullGeohash.substring(0, precision)
+        }
+        Log.d(TAG, "Creating topic with location: ${topic.location}, geohashes: $geohashes")
 
         val topicData = hashMapOf(
             "userId" to topic.userId,
@@ -52,7 +58,7 @@ class ForumRepository(
             "title" to topic.title,
             "content" to topic.content,
             "timestamp" to topic.timestamp,
-            "geohash" to geohash
+            "geohashes" to geohashes
         )
 
         val document = topicsCollection.add(topicData).await()
@@ -112,12 +118,21 @@ class ForumRepository(
 
     fun findNearbyTopics(userLocation: GeoCoordinates, radiusInKm: Double = 1.0): Flow<List<Topic>> = flow {
         try {
+            val precision = GeoUtils.getPrecisionForRadius(radiusInKm)
             val nearbyHashes = GeoUtils.getNearbyGeoHashes(userLocation, radiusInKm)
 
+            // Это поле теперь будет корректно найдено в Firestore,
+            // т.к. мы сохранили все нужные уровни точности в createTopic
+            val fieldToQuery = "geohashes.p$precision"
+
+            Log.d(TAG, "Searching with nearby hashes: $nearbyHashes on field '$fieldToQuery' for location: $userLocation")
+
             val snapshot = topicsCollection
-                .whereIn("geohash", nearbyHashes)
+                .whereIn(fieldToQuery, nearbyHashes)
                 .get()
                 .await()
+
+            Log.d(TAG, "Topics from geohash query returned: ${snapshot.documents.size} documents.")
 
             val topicsFromGeohashQuery = snapshot.documents.mapNotNull { doc ->
                 val geoPoint = doc.getGeoPoint("location")
@@ -137,25 +152,37 @@ class ForumRepository(
             }
 
             val nearbyTopics = topicsFromGeohashQuery.filter { topic ->
-                GeoUtils.distanceBetween(userLocation, topic.location) <= radiusInKm
+                val distance = GeoUtils.distanceBetween(userLocation, topic.location)
+                Log.d(TAG, "Topic '${topic.title}' is $distance km away. Included: ${distance <= radiusInKm}")
+                distance <= radiusInKm
             }.sortedByDescending { it.timestamp }
 
+            Log.d(TAG, "Final nearby topics count after distance filtering: ${nearbyTopics.size}")
             emit(nearbyTopics)
+
         } catch (e: Exception) {
-            val localTopics = forumDao.getNearbyTopics(
-                userLocation.latitude,
-                userLocation.longitude
-            ).first().map { localTopic ->
-                Topic(
-                    id = localTopic.id,
-                    userId = localTopic.userId,
-                    location = GeoCoordinates(localTopic.latitude, localTopic.longitude),
-                    title = localTopic.title,
-                    content = localTopic.content,
-                    timestamp = Timestamp(localTopic.timestamp / 1000, 0)
-                )
-            }
-            emit(localTopics)
+            Log.e(TAG, "Failed to fetch from Firebase, falling back to cache.", e)
+            val topicsFromCache = forumDao.getAllTopics()
+                .first()
+                .map { localTopic ->
+                    Topic(
+                        id = localTopic.id,
+                        userId = localTopic.userId,
+                        location = GeoCoordinates(localTopic.latitude, localTopic.longitude),
+                        title = localTopic.title,
+                        content = localTopic.content,
+                        timestamp = Timestamp(localTopic.timestamp / 1000, 0)
+                    )
+                }
+
+            val nearbyTopics = topicsFromCache
+                .filter { topic ->
+                    GeoUtils.distanceBetween(userLocation, topic.location) <= radiusInKm
+                }
+                .sortedByDescending { it.timestamp }
+
+            Log.d(TAG, "Found ${nearbyTopics.size} topics from cache.")
+            emit(nearbyTopics)
         }
     }
 

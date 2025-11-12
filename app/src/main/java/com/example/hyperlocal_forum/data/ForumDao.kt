@@ -41,10 +41,4 @@ interface ForumDao {
     @Insert
     suspend fun insertUser(user: LocalUser)
 
-    @Query("""
-        SELECT * FROM topics 
-        WHERE ABS(latitude - :lat) < 0.1 AND ABS(longitude - :lon) < 0.1
-        ORDER BY timestamp DESC
-    """)
-    fun getNearbyTopics(lat: Double, lon: Double): Flow<List<LocalTopic>>
 }
