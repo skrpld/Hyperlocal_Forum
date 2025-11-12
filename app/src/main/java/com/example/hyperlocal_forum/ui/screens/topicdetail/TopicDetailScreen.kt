@@ -134,16 +134,6 @@ private fun TopicHeader(title: String, content: String) {
     }
 }
 
-// Preview может сломаться, т.к. требует ViewModel.
-// Его нужно будет либо удалить, либо создать для него поддельную ViewModel, если он вам нужен.
-/*
-@Preview
-@Composable
-fun TopicDetailScreenPreview() {
-    // Эта превью больше не будет работать без ViewModel.
-    // TopicDetailScreen(topicId = "1", onBack = {})
-}
-*/
 @Preview
 @Composable
 fun TopicHeaderPreview() {

@@ -32,34 +32,36 @@ object GeoUtils {
         var lonRange = doubleArrayOf(-180.0, 180.0)
         val geohash = StringBuilder()
         var isEvenBit = true
-        val totalBits = precision * BITS_PER_CHAR
         var bit = 0
         var ch = 0
 
         while (geohash.length < precision) {
-            val mid: Double
             if (isEvenBit) {
-                mid = (lonRange[0] + lonRange[1]) / 2
+                val mid = (lonRange[0] + lonRange[1]) / 2
                 if (location.longitude > mid) {
-                    ch = ch or (1 shl (BITS_PER_CHAR - 1 - (bit % BITS_PER_CHAR)))
+                    ch = (ch shl 1) or 1
                     lonRange[0] = mid
                 } else {
+                    ch = ch shl 1
                     lonRange[1] = mid
                 }
             } else {
-                mid = (latRange[0] + latRange[1]) / 2
+                val mid = (latRange[0] + latRange[1]) / 2
                 if (location.latitude > mid) {
-                    ch = ch or (1 shl (BITS_PER_CHAR - 1 - (bit % BITS_PER_CHAR)))
+                    ch = (ch shl 1) or 1
                     latRange[0] = mid
                 } else {
+                    ch = ch shl 1
                     latRange[1] = mid
                 }
             }
+
             isEvenBit = !isEvenBit
             bit++
 
-            if (bit % BITS_PER_CHAR == 0) {
+            if (bit == BITS_PER_CHAR) {
                 geohash.append(BASE32_CHARS[ch])
+                bit = 0
                 ch = 0
             }
         }
