@@ -39,7 +39,7 @@ fun Comments(
 ) {
     Column(modifier = modifier) {
         Text(
-            text = "Comments",
+            text = "Комментарии",
             textAlign = TextAlign.Center,
             modifier = Modifier
                 .fillMaxWidth()
@@ -68,7 +68,7 @@ fun Comments(
                             IconButton(onClick = { onDeleteComment(comment.id) }) {
                                 Icon(
                                     Icons.Default.Delete,
-                                    contentDescription = "Delete comment"
+                                    contentDescription = "Удалить комментарий"
                                 )
                             }
                         }
@@ -87,13 +87,13 @@ fun Comments(
                 OutlinedTextField(
                     value = newCommentContent,
                     onValueChange = onCommentContentChange,
-                    label = { Text("Your comment") },
+                    label = { Text("Ваш комментарий") },
                     modifier = Modifier
                         .weight(1f)
                         .padding(end = 8.dp)
                 )
                 IconButton(onClick = onSaveComment) {
-                    Icon(Icons.Default.Send, contentDescription = "Send Comment")
+                    Icon(Icons.Default.Send, contentDescription = "Отправить комментарий")
                 }
             }
         } else {
@@ -103,8 +103,8 @@ fun Comments(
                     .fillMaxWidth()
                     .padding(8.dp)
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Comment")
-                Text("Add Comment")
+                Icon(Icons.Default.Add, contentDescription = "Добавить комментарий")
+                Text("Добавить комментарий")
             }
         }
     }

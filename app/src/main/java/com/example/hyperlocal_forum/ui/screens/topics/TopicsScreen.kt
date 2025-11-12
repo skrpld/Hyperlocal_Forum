@@ -109,12 +109,12 @@ fun TopicsScreen(
                                 icon = {
                                     Icon(
                                         Icons.Default.Public,
-                                        contentDescription = "All topics",
+                                        contentDescription = "Все топики",
                                         modifier = Modifier.size(SegmentedButtonDefaults.IconSize)
                                     )
                                 }
                             ) {
-                                Text("All")
+                                Text("Все")
                             }
                             SegmentedButton(
                                 selected = showNearbyOnly,
@@ -123,32 +123,32 @@ fun TopicsScreen(
                                 icon = {
                                     Icon(
                                         Icons.Default.LocationOn,
-                                        contentDescription = "Nearby topics",
+                                        contentDescription = "Ближайшие топики",
                                         modifier = Modifier.size(SegmentedButtonDefaults.IconSize)
                                     )
                                 },
                                 enabled = true
                             ) {
-                                Text("Nearby")
+                                Text("Рядом")
                             }
                         }
                     }
                 },
                 navigationIcon = {
                     IconButton(onClick = navigateToProfile) {
-                        Icon(Icons.Default.Person, contentDescription = "Profile")
+                        Icon(Icons.Default.Person, contentDescription = "Профиль")
                     }
                 },
                 actions = {
                     IconButton(onClick = { viewModel.refreshTopics() }) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Refresh Topics")
+                        Icon(Icons.Default.Refresh, contentDescription = "Обновить топики")
                     }
                 }
             )
         },
         floatingActionButton = {
             FloatingActionButton(onClick = navigateToCreateTopic) {
-                Icon(Icons.Default.Add, contentDescription = "Create Topic")
+                Icon(Icons.Default.Add, contentDescription = "Создать топик")
             }
         }
     ) { paddingValues ->
@@ -235,14 +235,14 @@ fun TopicFilterSection(
                     onClick = { onRadiusSelected(radius) },
                     shape = SegmentedButtonDefaults.itemShape(index = index, count = radiusOptions.size)
                 ) {
-                    Text("${radius}km")
+                    Text("${radius}км")
                 }
             }
         }
 
         if (userLocation == null) {
             Text(
-                text = "Location required for nearby topics",
+                text = "Для отображения ближайших тем требуется доступ к местоположению",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.error,
                 modifier = Modifier.padding(top = 8.dp)
@@ -256,10 +256,10 @@ fun TopicFilterSection(
 private fun RationaleDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Location Permission Required") },
-        text = { Text("To show topics near you, this app needs access to your device's location.") },
-        confirmButton = { Button(onClick = onConfirm) { Text("Grant") } },
-        dismissButton = { Button(onClick = onDismiss) { Text("Cancel") } }
+        title = { Text("Требуется разрешение на определение местоположения") },
+        text = { Text("Чтобы показывать темы рядом с вами, этому приложению требуется доступ к местоположению вашего устройства.") },
+        confirmButton = { Button(onClick = onConfirm) { Text("Предоставить") } },
+        dismissButton = { Button(onClick = onDismiss) { Text("Отмена") } }
     )
 }
 
@@ -267,10 +267,10 @@ private fun RationaleDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
 private fun PermanentlyDeniedDialog(onDismiss: () -> Unit, onGoToSettings: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Permission Denied") },
-        text = { Text("Location permission was permanently denied. You can grant it in the app settings.") },
-        confirmButton = { Button(onClick = onGoToSettings) { Text("Go to Settings") } },
-        dismissButton = { Button(onClick = onDismiss) { Text("Cancel") } }
+        title = { Text("В разрешении отказано") },
+        text = { Text("Разрешение на определение местоположения было отклонено навсегда. Вы можете предоставить его в настройках приложения.") },
+        confirmButton = { Button(onClick = onGoToSettings) { Text("Перейти в настройки") } },
+        dismissButton = { Button(onClick = onDismiss) { Text("Отмена") } }
     )
 }
 
@@ -290,18 +290,18 @@ fun TopicList(
         ) {
             Icon(
                 Icons.Default.Public,
-                contentDescription = "No topics",
+                contentDescription = "Нет топиков",
                 modifier = Modifier.size(64.dp),
                 tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
             )
             Spacer(modifier = Modifier.size(16.dp))
             Text(
-                "No topics yet",
+                "Пока нет топиков",
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
             )
             Text(
-                "Tap the '+' button to create one",
+                "Нажмите кнопку '+', чтобы создать",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
             )
@@ -309,7 +309,7 @@ fun TopicList(
     } else {
         LazyColumn(modifier = modifier) {
             items(topics) { topic ->
-                val authorName = users[topic.userId]?.username ?: "Unknown User"
+                val authorName = users[topic.userId]?.username ?: "Unknown"
                 TopicItem(
                     topic = topic,
                     authorName = authorName,
@@ -363,7 +363,7 @@ fun TopicItem(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "By $authorName",
+                    text = "От $authorName",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                 )
@@ -382,6 +382,6 @@ fun TopicItem(
 
 private fun formatDate(timestamp: Timestamp): String {
     val date = timestamp.toDate()
-    val formatter = SimpleDateFormat("MMM dd, yyyy 'at' HH:mm", Locale.getDefault())
+    val formatter = SimpleDateFormat("MMM dd, yyyy 'в' HH:mm", Locale.getDefault())
     return formatter.format(date)
 }

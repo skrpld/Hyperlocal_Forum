@@ -42,7 +42,7 @@ fun AuthScreen(
             snackbarHost = { SnackbarHost(snackbarHostState) },
             topBar = {
                 TopAppBar(
-                    title = { Text(if (isLoginMode) "Login" else "Register", modifier = Modifier.testTag("AuthScreen_Title")) }
+                    title = { Text(if (isLoginMode) "Вход" else "Регистрация", modifier = Modifier.testTag("AuthScreen_Title")) }
                 )
             },
             modifier = modifier.fillMaxSize()
@@ -68,7 +68,7 @@ fun AuthScreen(
                             OutlinedTextField(
                                 value = username,
                                 onValueChange = { viewModel.onUsernameChange(it) },
-                                label = { Text("Username") },
+                                label = { Text("Имя пользователя") },
                                 modifier = Modifier.fillMaxWidth().testTag("AuthScreen_Username"),
                                 enabled = !isLoading
                             )
@@ -78,7 +78,7 @@ fun AuthScreen(
                         OutlinedTextField(
                             value = email,
                             onValueChange = { viewModel.onEmailChange(it) },
-                            label = { Text("Email") },
+                            label = { Text("Электронная почта") },
                             modifier = Modifier.fillMaxWidth().testTag("AuthScreen_Email"),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                             enabled = !isLoading
@@ -89,7 +89,7 @@ fun AuthScreen(
                         OutlinedTextField(
                             value = password,
                             onValueChange = { viewModel.onPasswordChange(it) },
-                            label = { Text("Password") },
+                            label = { Text("Пароль") },
                             modifier = Modifier.fillMaxWidth().testTag("AuthScreen_Password"),
                             visualTransformation = PasswordVisualTransformation(),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
@@ -100,7 +100,7 @@ fun AuthScreen(
                             OutlinedTextField(
                                 value = confirmPassword,
                                 onValueChange = { viewModel.onConfirmPasswordChange(it) },
-                                label = { Text("Confirm Password") },
+                                label = { Text("Подтвердите пароль") },
                                 modifier = Modifier.fillMaxWidth().testTag("AuthScreen_ConfirmPassword"),
                                 visualTransformation = PasswordVisualTransformation(),
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
@@ -119,7 +119,7 @@ fun AuthScreen(
                                     color = MaterialTheme.colorScheme.onPrimary
                                 )
                             } else {
-                                Text(if (isLoginMode) "Login" else "Register")
+                                Text(if (isLoginMode) "Войти" else "Зарегистрироваться")
                             }
                         }
                     }
@@ -132,7 +132,7 @@ fun AuthScreen(
                     modifier = Modifier.testTag("AuthScreen_ToggleModeButton"),
                     enabled = !isLoading
                 ) {
-                    Text(if (isLoginMode) "Don't have an account? Register" else "Already have an account? Login")
+                    Text(if (isLoginMode) "Нет аккаунта? Зарегистрируйтесь" else "Уже есть аккаунт? Войдите")
                 }
             }
         }

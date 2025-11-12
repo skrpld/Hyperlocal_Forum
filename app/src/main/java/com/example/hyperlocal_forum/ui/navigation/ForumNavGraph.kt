@@ -84,7 +84,6 @@ fun ForumNavGraph(
             val profileViewModel: ProfileViewModel = hiltViewModel()
             ProfileScreen(
                 viewModel = profileViewModel,
-                onBack = { navController.navigateUp() },
                 onLogout = { navActions.navigateToLogin() }
             )
         }

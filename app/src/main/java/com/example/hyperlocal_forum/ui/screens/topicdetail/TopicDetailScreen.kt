@@ -118,7 +118,7 @@ fun TopicDetailScreen(
                         text = when {
                             isEditMode && topicId == "new" -> "Создание топика"
                             isEditMode -> "Редактирование топика"
-                            else -> "by ${topicDetailState?.author?.username ?: "Unknown"}"
+                            else -> "от ${topicDetailState?.author?.username ?: "Unknown"}"
                         }
                     )
                 },
@@ -298,13 +298,4 @@ private fun TopicHeader(title: String, content: String) {
             }
         }
     }
-}
-
-@Preview
-@Composable
-fun TopicHeaderPreview() {
-    TopicHeader(
-        title = "This is a sample topic title",
-        content = "This is a sample topic content."
-    )
 }

@@ -49,7 +49,7 @@ fun ProfileScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
-            TopAppBar(title = { Text("Profile") })
+            TopAppBar(title = { Text("Профиль") })
         }
     ) { paddingValues ->
         Column(
@@ -66,14 +66,14 @@ fun ProfileScreen(
                 OutlinedTextField(
                     value = username,
                     onValueChange = { username = it },
-                    label = { Text("Username") },
+                    label = { Text("Имя пользователя") },
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
-                    label = { Text("New Password") },
+                    label = { Text("Новый пароль") },
                     visualTransformation = PasswordVisualTransformation(),
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -85,14 +85,14 @@ fun ProfileScreen(
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Save Changes")
+                    Text("Сохранить изменения")
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(
                     onClick = { viewModel.logout { onLogout() } },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Log Out")
+                    Text("Выйти")
                 }
             }
         }
