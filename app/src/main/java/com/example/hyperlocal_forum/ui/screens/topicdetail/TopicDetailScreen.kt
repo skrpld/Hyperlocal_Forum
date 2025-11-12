@@ -31,14 +31,15 @@ import com.example.hyperlocal_forum.ui.components.comment.Comments
 @Composable
 fun TopicDetailScreen(
     topicId: String,
-    viewModel: TopicDetailViewModel, // <-- УБРАНО ЗНАЧЕНИЕ ПО УМОЛЧАНИЮ hiltViewModel()
+    viewModel: TopicDetailViewModel,
     modifier: Modifier = Modifier,
     onBack: () -> Unit
 ) {
     val topicDetailState by viewModel.topicDetailState.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val showCommentInput by viewModel.showCommentInput.collectAsState()
+    val newCommentContent by viewModel.newCommentContent.collectAsState()
 
-    // Этот LaunchedEffect теперь будет работать с правильным, единственным экземпляром ViewModel
     LaunchedEffect(topicId) {
         viewModel.setTopicId(topicId)
     }
@@ -66,7 +67,7 @@ fun TopicDetailScreen(
                 .padding(paddingValues)
         ) {
             when {
-                isLoading -> {
+                isLoading && topicDetailState == null -> { // Показываем индикатор только при первой загрузке
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
@@ -83,7 +84,12 @@ fun TopicDetailScreen(
                         )
                         Comments(
                             modifier = Modifier.weight(1f),
-                            topicId = data.topicWithComments.topic.id
+                            comments = data.topicWithComments.comments,
+                            showCommentInput = showCommentInput,
+                            newCommentContent = newCommentContent,
+                            onCommentContentChange = viewModel::onNewCommentContentChange,
+                            onSaveComment = viewModel::saveComment,
+                            onToggleCommentInput = viewModel::toggleCommentInput
                         )
                     }
                 }
@@ -100,6 +106,7 @@ fun TopicDetailScreen(
     }
 }
 
+// Функции TopicHeader и TopicHeaderPreview остаются без изменений
 @Composable
 private fun TopicHeader(title: String, content: String) {
     Card(

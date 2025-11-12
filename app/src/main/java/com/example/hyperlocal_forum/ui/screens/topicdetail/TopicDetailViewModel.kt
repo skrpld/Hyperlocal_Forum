@@ -9,9 +9,11 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import com.example.hyperlocal_forum.data.AuthManager
+import com.example.hyperlocal_forum.data.models.firestore.Comment
+import kotlinx.coroutines.flow.first
 
 data class TopicDetailState(
     val topicWithComments: TopicWithComments,
@@ -20,7 +22,8 @@ data class TopicDetailState(
 
 @HiltViewModel
 class TopicDetailViewModel @Inject constructor(
-    private val forumRepository: ForumRepository
+    private val forumRepository: ForumRepository,
+    private val authManager: AuthManager
 ) : ViewModel() {
 
     private var currentTopicId: String? = null
@@ -30,6 +33,51 @@ class TopicDetailViewModel @Inject constructor(
 
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
+    private val _showCommentInput = MutableStateFlow(false)
+    val showCommentInput: StateFlow<Boolean> = _showCommentInput.asStateFlow()
+
+    private val _newCommentContent = MutableStateFlow("")
+    val newCommentContent: StateFlow<String> = _newCommentContent.asStateFlow()
+
+    fun toggleCommentInput() {
+        _showCommentInput.value = !_showCommentInput.value
+        if (!_showCommentInput.value) {
+            _newCommentContent.value = ""
+        }
+    }
+
+    fun onNewCommentContentChange(content: String) {
+        _newCommentContent.value = content
+    }
+
+    fun saveComment() {
+        val topicId = currentTopicId ?: return
+
+        viewModelScope.launch {
+            if (_newCommentContent.value.isNotBlank()) {
+                val userId = authManager.currentUserId.first()
+
+                if (userId != null && userId != "-1") {
+                    try {
+                        val user = forumRepository.getUser(userId)
+                        if (user != null) {
+                            val newComment = Comment(
+                                userId = userId,
+                                topicId = topicId,
+                                content = _newCommentContent.value,
+                                username = user.username
+                            )
+                            forumRepository.addComment(newComment)
+                            _newCommentContent.value = ""
+                            _showCommentInput.value = false
+                        }
+                    } catch (e: Exception) {
+                    }
+                }
+            }
+        }
+    }
 
     fun setTopicId(id: String) {
         if (id == currentTopicId) {
@@ -45,20 +93,15 @@ class TopicDetailViewModel @Inject constructor(
             _topicDetailState.value = null
 
             try {
-                val topicWithComments = forumRepository.getTopicWithComments(topicId).firstOrNull()
-
-                if (topicWithComments != null) {
+                forumRepository.getTopicWithComments(topicId).collect { topicWithComments ->
                     val author = forumRepository.getUser(topicWithComments.topic.userId)
-
                     val authorToShow = author ?: User(id = topicWithComments.topic.userId, username = "Unknown")
 
                     _topicDetailState.value = TopicDetailState(topicWithComments, authorToShow)
-                } else {
-                    _topicDetailState.value = null
+                    _isLoading.value = false
                 }
             } catch (e: Exception) {
                 _topicDetailState.value = null
-            } finally {
                 _isLoading.value = false
             }
         }

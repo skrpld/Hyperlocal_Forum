@@ -15,7 +15,10 @@ import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.GeoPoint
 import com.google.firebase.firestore.Query
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
@@ -45,8 +48,6 @@ class ForumRepository(
         val fullGeohash = GeoUtils.getGeoHashForLocation(topic.location, 9)
 
         val geohashes = mutableMapOf<String, String>()
-        // ИЗМЕНЕНИЕ: Сохраняем геохеши для всех уровней точности от 9 до 2.
-        // Это гарантирует, что запросы по любому из наших радиусов будут работать.
         for (precision in 9 downTo 2) {
             geohashes["p$precision"] = fullGeohash.substring(0, precision)
         }
@@ -210,41 +211,52 @@ class ForumRepository(
         return document.id
     }
 
-    fun getCommentsForTopic(topicId: String): Flow<List<Comment>> = flow {
-        try {
-            val snapshot = commentsCollection
+    fun getCommentsForTopic(topicId: String): Flow<List<Comment>> = callbackFlow {
+        val listener = try {
+            commentsCollection
                 .whereEqualTo("topicId", topicId)
                 .orderBy("timestamp", Query.Direction.ASCENDING)
-                .get()
-                .await()
+                .addSnapshotListener { snapshot, error ->
+                    if (error != null) {
+                        close(error)
+                        return@addSnapshotListener
+                    }
 
-            val comments = snapshot.documents.mapNotNull { doc ->
-                doc.getTimestamp("timestamp")?.let { timestamp ->
-                    Comment(
-                        id = doc.id,
-                        userId = doc.getString("userId") ?: "",
-                        topicId = doc.getString("topicId") ?: "",
-                        content = doc.getString("content") ?: "",
-                        username = doc.getString("username") ?: "",
-                        timestamp = timestamp
-                    )
+                    if (snapshot != null) {
+                        val comments = snapshot.documents.mapNotNull { doc ->
+                            doc.getTimestamp("timestamp")?.let { timestamp ->
+                                Comment(
+                                    id = doc.id,
+                                    userId = doc.getString("userId") ?: "",
+                                    topicId = doc.getString("topicId") ?: "",
+                                    content = doc.getString("content") ?: "",
+                                    username = doc.getString("username") ?: "",
+                                    timestamp = timestamp
+                                )
+                            }
+                        }
+                        trySend(comments).isSuccess
+                    }
                 }
-            }
-            emit(comments)
         } catch (e: Exception) {
-            val localComments = forumDao.getTopicWithComments(topicId)
-                .firstOrNull()?.comments?.map { localComment ->
-                    Comment(
-                        id = localComment.id,
-                        userId = localComment.userId,
-                        topicId = localComment.topicId,
-                        content = localComment.content,
-                        username = localComment.username,
-                        timestamp = Timestamp(localComment.timestamp / 1000, 0)
-                    )
-                } ?: emptyList()
-            emit(localComments)
+            close(e)
+            null
         }
+        awaitClose { listener?.remove() }
+    }.catch { e ->
+        Log.e(TAG, "Error listening for comments, falling back to cache", e)
+        val localComments = forumDao.getTopicWithComments(topicId)
+            .firstOrNull()?.comments?.map { localComment ->
+                Comment(
+                    id = localComment.id,
+                    userId = localComment.userId,
+                    topicId = localComment.topicId,
+                    content = localComment.content,
+                    username = localComment.username,
+                    timestamp = Timestamp(localComment.timestamp / 1000, 0)
+                )
+            } ?: emptyList()
+        emit(localComments)
     }
 
     fun getTopicWithComments(topicId: String): Flow<TopicWithComments> = flow {
@@ -267,8 +279,10 @@ class ForumRepository(
                         content = content,
                         timestamp = timestamp
                     )
-                    val comments = getCommentsForTopic(topicId).firstOrNull() ?: emptyList()
-                    emit(TopicWithComments(topic, comments))
+
+                    getCommentsForTopic(topicId).collect { comments ->
+                        emit(TopicWithComments(topic, comments))
+                    }
                 }
             }
         } catch (e: Exception) {
