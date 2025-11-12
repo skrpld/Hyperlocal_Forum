@@ -49,10 +49,6 @@ class TopicsViewModel @Inject constructor(
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
-    init {
-        refreshTopics()
-    }
-
     private fun loadTopics() {
         viewModelScope.launch {
             _isLoading.value = true

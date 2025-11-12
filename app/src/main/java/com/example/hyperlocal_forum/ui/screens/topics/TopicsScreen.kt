@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.hyperlocal_forum.data.GeoCoordinates
@@ -58,6 +59,33 @@ fun TopicsScreen(
     var showSettingsDialog by remember { mutableStateOf(false) }
     var permissionRequestLaunched by rememberSaveable { mutableStateOf(false) }
 
+    val onFilterChange: (Boolean) -> Unit = { showNearby ->
+        if (showNearby) {
+            val isPermanentlyDenied = !locationPermissionsState.allPermissionsGranted && !locationPermissionsState.shouldShowRationale
+            when {
+                locationPermissionsState.allPermissionsGranted -> {
+                    viewModel.switchToNearbyFilter()
+                }
+                locationPermissionsState.shouldShowRationale -> {
+                    showRationaleDialog = true
+                }
+                permissionRequestLaunched && isPermanentlyDenied -> {
+                    showSettingsDialog = true
+                }
+                else -> {
+                    permissionRequestLaunched = true
+                    locationPermissionsState.launchMultiplePermissionRequest()
+                }
+            }
+        } else {
+            viewModel.loadAllTopics()
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.refreshTopics()
+    }
+
     LaunchedEffect(locationPermissionsState.allPermissionsGranted, permissionRequestLaunched) {
         if (locationPermissionsState.allPermissionsGranted && permissionRequestLaunched) {
             viewModel.switchToNearbyFilter()
@@ -70,23 +98,49 @@ fun TopicsScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Column {
-                        Text("Topics")
-                        errorMessage?.let { message ->
-                            Text(
-                                text = message,
-                                color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.bodySmall,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        SingleChoiceSegmentedButtonRow {
+                            SegmentedButton(
+                                selected = !showNearbyOnly,
+                                onClick = { onFilterChange(false) },
+                                shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+                                icon = {
+                                    Icon(
+                                        Icons.Default.Public,
+                                        contentDescription = "All topics",
+                                        modifier = Modifier.size(SegmentedButtonDefaults.IconSize)
+                                    )
+                                }
+                            ) {
+                                Text("All")
+                            }
+                            SegmentedButton(
+                                selected = showNearbyOnly,
+                                onClick = { onFilterChange(true) },
+                                shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+                                icon = {
+                                    Icon(
+                                        Icons.Default.LocationOn,
+                                        contentDescription = "Nearby topics",
+                                        modifier = Modifier.size(SegmentedButtonDefaults.IconSize)
+                                    )
+                                },
+                                enabled = true
+                            ) {
+                                Text("Nearby")
+                            }
                         }
                     }
                 },
-                actions = {
+                navigationIcon = {
                     IconButton(onClick = navigateToProfile) {
                         Icon(Icons.Default.Person, contentDescription = "Profile")
                     }
+                },
+                actions = {
                     IconButton(onClick = { viewModel.refreshTopics() }) {
                         Icon(Icons.Default.Refresh, contentDescription = "Refresh Topics")
                     }
@@ -100,37 +154,29 @@ fun TopicsScreen(
         }
     ) { paddingValues ->
         Column(modifier = Modifier.padding(paddingValues)) {
-            TopicFilterSection(
-                showNearbyOnly = showNearbyOnly,
-                onFilterChange = { showNearby ->
-                    if (showNearby) {
-                        val isPermanentlyDenied = !locationPermissionsState.allPermissionsGranted && !locationPermissionsState.shouldShowRationale
-                        when {
-                            locationPermissionsState.allPermissionsGranted -> {
-                                viewModel.switchToNearbyFilter()
-                            }
-                            locationPermissionsState.shouldShowRationale -> {
-                                showRationaleDialog = true
-                            }
-                            permissionRequestLaunched && isPermanentlyDenied -> {
-                                showSettingsDialog = true
-                            }
-                            else -> {
-                                permissionRequestLaunched = true
-                                locationPermissionsState.launchMultiplePermissionRequest()
-                            }
-                        }
-                    } else {
-                        viewModel.loadAllTopics()
-                    }
-                },
-                userLocation = userLocation,
-                selectedRadius = searchRadius,
-                onRadiusSelected = { radius -> viewModel.setSearchRadius(radius) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-            )
+
+            errorMessage?.let { message ->
+                Text(
+                    text = message,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp)
+                )
+            }
+
+            if (showNearbyOnly) {
+                TopicFilterSection(
+                    userLocation = userLocation,
+                    selectedRadius = searchRadius,
+                    onRadiusSelected = { radius -> viewModel.setSearchRadius(radius) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                )
+            }
 
             if (showRationaleDialog) {
                 RationaleDialog(
@@ -175,8 +221,6 @@ fun TopicsScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopicFilterSection(
-    showNearbyOnly: Boolean,
-    onFilterChange: (Boolean) -> Unit,
     userLocation: GeoCoordinates?,
     selectedRadius: Double,
     onRadiusSelected: (Double) -> Unit,
@@ -185,57 +229,19 @@ fun TopicFilterSection(
     val radiusOptions = listOf(0.5, 2.0, 5.0, 10.0, 20.0)
 
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            SingleChoiceSegmentedButtonRow {
+        SingleChoiceSegmentedButtonRow {
+            radiusOptions.forEachIndexed { index, radius ->
                 SegmentedButton(
-                    selected = !showNearbyOnly,
-                    onClick = { onFilterChange(false) },
-                    shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
-                    icon = {
-                        Icon(
-                            Icons.Default.Public,
-                            contentDescription = "All topics",
-                            modifier = Modifier.size(SegmentedButtonDefaults.IconSize)
-                        )
-                    }
+                    selected = selectedRadius == radius,
+                    onClick = { onRadiusSelected(radius) },
+                    shape = SegmentedButtonDefaults.itemShape(index = index, count = radiusOptions.size)
                 ) {
-                    Text("All")
-                }
-                SegmentedButton(
-                    selected = showNearbyOnly,
-                    onClick = { onFilterChange(true) },
-                    shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
-                    icon = {
-                        Icon(
-                            Icons.Default.LocationOn,
-                            contentDescription = "Nearby topics",
-                            modifier = Modifier.size(SegmentedButtonDefaults.IconSize)
-                        )
-                    },
-                    enabled = true
-                ) {
-                    Text("Nearby")
+                    Text("${radius}km")
                 }
             }
         }
 
-        if (showNearbyOnly) {
-            Spacer(modifier = Modifier.height(8.dp))
-            SingleChoiceSegmentedButtonRow {
-                radiusOptions.forEachIndexed { index, radius ->
-                    SegmentedButton(
-                        selected = selectedRadius == radius,
-                        onClick = { onRadiusSelected(radius) },
-                        shape = SegmentedButtonDefaults.itemShape(index = index, count = radiusOptions.size)
-                    ) {
-                        Text("${radius}km")
-                    }
-                }
-            }
-        }
-
-
-        if (showNearbyOnly && userLocation == null) {
+        if (userLocation == null) {
             Text(
                 text = "Location required for nearby topics",
                 style = MaterialTheme.typography.bodySmall,
