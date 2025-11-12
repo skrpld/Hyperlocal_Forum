@@ -16,6 +16,9 @@ interface ForumDao {
     @Insert
     suspend fun insertTopic(topic: LocalTopic)
 
+    @Update
+    suspend fun updateTopic(topic: LocalTopic)
+
     @Insert
     suspend fun insertComment(comment: LocalComment)
 

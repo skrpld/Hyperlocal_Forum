@@ -78,6 +78,18 @@ class ForumRepository(
         return document.id
     }
 
+    suspend fun updateTopicContent(topicId: String, newContent: String) {
+        try {
+            val topicData = mapOf(
+                "content" to newContent
+            )
+            topicsCollection.document(topicId).update(topicData).await()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error updating topic content", e)
+            throw e
+        }
+    }
+
     fun getAllTopics(): Flow<List<Topic>> = flow {
         try {
             val snapshot = topicsCollection

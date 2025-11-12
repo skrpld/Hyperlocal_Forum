@@ -6,7 +6,6 @@ object ForumDestinations {
     const val LOGIN_ROUTE = "login"
     const val TOPICS_ROUTE = "topics"
     const val TOPIC_DETAIL_ROUTE = "topic/{topicId}"
-    const val CREATE_TOPIC_ROUTE = "create_topic"
     const val PROFILE_ROUTE = "profile"
 
     fun topicDetailRoute(topicId: String) = "topic/$topicId"
@@ -18,7 +17,7 @@ class ForumNavigationActions(private val navController: NavHostController) {
     }
 
     fun navigateToCreateTopic() {
-        navController.navigate(ForumDestinations.CREATE_TOPIC_ROUTE)
+        navController.navigate(ForumDestinations.topicDetailRoute("new"))
     }
 
     fun navigateToProfile() {

@@ -17,8 +17,6 @@ import com.example.hyperlocal_forum.ui.screens.profile.ProfileScreen
 import com.example.hyperlocal_forum.ui.screens.profile.ProfileViewModel
 import com.example.hyperlocal_forum.ui.screens.topicdetail.TopicDetailScreen
 import com.example.hyperlocal_forum.ui.screens.topicdetail.TopicDetailViewModel
-import com.example.hyperlocal_forum.ui.screens.topicedit.TopicEditScreen
-import com.example.hyperlocal_forum.ui.screens.topicedit.TopicEditViewModel
 import com.example.hyperlocal_forum.ui.screens.topics.TopicsScreen
 import com.example.hyperlocal_forum.ui.topics.TopicsViewModel
 
@@ -68,29 +66,17 @@ fun ForumNavGraph(
         ) { backStackEntry ->
             val topicId = backStackEntry.arguments?.getString("topicId")
             if (topicId != null) {
-                // 1. Создаем ViewModel здесь. Hilt привяжет его к этому экрану в графе навигации.
                 val topicDetailViewModel: TopicDetailViewModel = hiltViewModel()
-
-                // 2. Передаем этот экземпляр ViewModel напрямую в экран.
                 TopicDetailScreen(
                     topicId = topicId,
-                    viewModel = topicDetailViewModel, // <-- ВАЖНОЕ ИЗМЕНЕНИЕ
-                    onBack = { navController.navigateUp() }
+                    viewModel = topicDetailViewModel,
+                    onBack = { navController.navigateUp() },
+                    onTopicSaved = { savedTopicId ->
+                        navController.popBackStack()
+                        navActions.navigateToTopic(savedTopicId)
+                    }
                 )
             }
-        }
-
-        composable(route = ForumDestinations.CREATE_TOPIC_ROUTE) {
-            val topicEditViewModel: TopicEditViewModel = hiltViewModel()
-            TopicEditScreen(
-                viewModel = topicEditViewModel,
-                onTopicSaved = { topicId ->
-                    // Корректная навигация после сохранения
-                    navController.popBackStack()
-                    navActions.navigateToTopic(topicId)
-                },
-                onBack = { navController.navigateUp() }
-            )
         }
 
         composable(route = ForumDestinations.PROFILE_ROUTE) {
