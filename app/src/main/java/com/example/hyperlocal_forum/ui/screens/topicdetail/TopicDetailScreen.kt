@@ -7,6 +7,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -27,13 +28,18 @@ fun TopicDetailScreen(
     viewModel: TopicDetailViewModel,
     modifier: Modifier = Modifier,
     onBack: () -> Unit,
-    onTopicSaved: (String) -> Unit
+    onTopicSaved: (String) -> Unit,
+    onTopicDeleted: () -> Unit
 ) {
     val topicDetailState by viewModel.topicDetailState.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val showCommentInput by viewModel.showCommentInput.collectAsState()
     val newCommentContent by viewModel.newCommentContent.collectAsState()
     val isEditMode by viewModel.isEditMode.collectAsState()
+    val isCurrentUserOwner by viewModel.isCurrentUserOwner.collectAsState()
+    val currentUserId by viewModel.currentUserId.collectAsState()
+    var showDeleteConfirmationDialog by remember { mutableStateOf(false) }
+
 
     val context = LocalContext.current
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
@@ -55,11 +61,9 @@ fun TopicDetailScreen(
         }
     }
 
-    // Инициализация ViewModel при первом запуске
     LaunchedEffect(topicId) {
         viewModel.setTopicId(topicId, topicId == "new")
 
-        // Запрос местоположения только при создании нового топика
         if (topicId == "new") {
             val fineLocationPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
             val coarseLocationPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION)
@@ -81,6 +85,30 @@ fun TopicDetailScreen(
         }
     }
 
+    if (showDeleteConfirmationDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmationDialog = false },
+            title = { Text("Удалить топик") },
+            text = { Text("Вы уверены, что хотите удалить этот топик? Это действие необратимо.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.deleteTopic(onTopicDeleted)
+                        showDeleteConfirmationDialog = false
+                    }
+                ) {
+                    Text("Удалить")
+                }
+            },
+            dismissButton = {
+                Button(onClick = { showDeleteConfirmationDialog = false }) {
+                    Text("Отмена")
+                }
+            }
+        )
+    }
+
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
@@ -100,10 +128,12 @@ fun TopicDetailScreen(
                     }
                 },
                 actions = {
-                    // Показываем кнопку редактирования только в режиме просмотра и если топик загружен
-                    if (!isEditMode && topicDetailState != null) {
+                    if (!isEditMode && topicDetailState != null && isCurrentUserOwner) {
                         IconButton(onClick = { viewModel.toggleEditMode() }) {
                             Icon(Icons.Default.Edit, contentDescription = "Редактировать топик")
+                        }
+                        IconButton(onClick = { showDeleteConfirmationDialog = true }) {
+                            Icon(Icons.Default.Delete, contentDescription = "Удалить топик")
                         }
                     }
                 }
@@ -116,7 +146,6 @@ fun TopicDetailScreen(
                 .padding(paddingValues)
         ) {
             when {
-                // Индикатор загрузки только при первом входе
                 isLoading && topicDetailState == null && !isEditMode -> {
                     Box(
                         modifier = Modifier.fillMaxSize(),
@@ -125,7 +154,6 @@ fun TopicDetailScreen(
                         CircularProgressIndicator()
                     }
                 }
-                // Режим редактирования
                 isEditMode -> {
                     EditView(
                         viewModel = viewModel,
@@ -133,7 +161,6 @@ fun TopicDetailScreen(
                         onTopicSaved = onTopicSaved
                     )
                 }
-                // Режим просмотра
                 topicDetailState != null -> {
                     val data = topicDetailState!!
                     Column(modifier = Modifier.fillMaxSize()) {
@@ -146,13 +173,14 @@ fun TopicDetailScreen(
                             comments = data.topicWithComments.comments,
                             showCommentInput = showCommentInput,
                             newCommentContent = newCommentContent,
+                            currentUserId = currentUserId,
                             onCommentContentChange = viewModel::onNewCommentContentChange,
                             onSaveComment = viewModel::saveComment,
-                            onToggleCommentInput = viewModel::toggleCommentInput
+                            onToggleCommentInput = viewModel::toggleCommentInput,
+                            onDeleteComment = viewModel::deleteComment
                         )
                     }
                 }
-                // Топик не найден
                 else -> {
                     Box(
                         modifier = Modifier.fillMaxSize(),
@@ -180,7 +208,6 @@ fun EditView(viewModel: TopicDetailViewModel, isNewTopic: Boolean, onTopicSaved:
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // Заголовок можно редактировать только при создании нового топика
         OutlinedTextField(
             value = title,
             onValueChange = viewModel::onTitleChange,
@@ -190,7 +217,6 @@ fun EditView(viewModel: TopicDetailViewModel, isNewTopic: Boolean, onTopicSaved:
             singleLine = true
         )
 
-        // Card для контента, который будет динамически изменять размер
         Card(modifier = Modifier.weight(1f)) {
             OutlinedTextField(
                 value = content,
@@ -240,7 +266,6 @@ fun EditView(viewModel: TopicDetailViewModel, isNewTopic: Boolean, onTopicSaved:
 }
 
 
-// Функции TopicHeader и TopicHeaderPreview остаются без изменений
 @Composable
 private fun TopicHeader(title: String, content: String) {
     Card(

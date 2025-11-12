@@ -90,6 +90,23 @@ class ForumRepository(
         }
     }
 
+    suspend fun deleteTopic(topicId: String) {
+        try {
+            val commentsQuery = commentsCollection.whereEqualTo("topicId", topicId).get().await()
+            for (document in commentsQuery.documents) {
+                commentsCollection.document(document.id).delete().await()
+            }
+
+            topicsCollection.document(topicId).delete().await()
+
+            forumDao.deleteTopicAndComments(topicId)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error deleting topic", e)
+            throw e
+        }
+    }
+
+
     fun getAllTopics(): Flow<List<Topic>> = flow {
         try {
             val snapshot = topicsCollection
@@ -134,8 +151,6 @@ class ForumRepository(
             val precision = GeoUtils.getPrecisionForRadius(radiusInKm)
             val nearbyHashes = GeoUtils.getNearbyGeoHashes(userLocation, radiusInKm)
 
-            // Это поле теперь будет корректно найдено в Firestore,
-            // т.к. мы сохранили все нужные уровни точности в createTopic
             val fieldToQuery = "geohashes.p$precision"
 
             Log.d(TAG, "Searching with nearby hashes: $nearbyHashes on field '$fieldToQuery' for location: $userLocation")
@@ -269,6 +284,16 @@ class ForumRepository(
                 )
             } ?: emptyList()
         emit(localComments)
+    }
+
+    suspend fun deleteComment(commentId: String) {
+        try {
+            commentsCollection.document(commentId).delete().await()
+            forumDao.deleteComment(commentId)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error deleting comment", e)
+            throw e
+        }
     }
 
     fun getTopicWithComments(topicId: String): Flow<TopicWithComments> = flow {

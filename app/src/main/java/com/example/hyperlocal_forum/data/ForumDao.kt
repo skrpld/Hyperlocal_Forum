@@ -22,6 +22,21 @@ interface ForumDao {
     @Insert
     suspend fun insertComment(comment: LocalComment)
 
+    @Query("DELETE FROM topics WHERE id = :topicId")
+    suspend fun deleteTopic(topicId: String)
+
+    @Query("DELETE FROM comments WHERE topicId = :topicId")
+    suspend fun deleteCommentsForTopic(topicId: String)
+
+    @Query("DELETE FROM comments WHERE id = :commentId")
+    suspend fun deleteComment(commentId: String)
+
+    @Transaction
+    suspend fun deleteTopicAndComments(topicId: String) {
+        deleteCommentsForTopic(topicId)
+        deleteTopic(topicId)
+    }
+
     @Query("SELECT * FROM topics")
     fun getAllTopics(): Flow<List<LocalTopic>>
 

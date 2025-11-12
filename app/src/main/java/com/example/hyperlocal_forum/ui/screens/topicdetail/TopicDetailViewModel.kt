@@ -42,7 +42,6 @@ class TopicDetailViewModel @Inject constructor(
     private val _newCommentContent = MutableStateFlow("")
     val newCommentContent: StateFlow<String> = _newCommentContent.asStateFlow()
 
-    // Состояния для режима редактирования
     private val _isEditMode = MutableStateFlow(false)
     val isEditMode: StateFlow<Boolean> = _isEditMode.asStateFlow()
 
@@ -61,9 +60,12 @@ class TopicDetailViewModel @Inject constructor(
     private val _location = MutableStateFlow<GeoCoordinates?>(null)
     val location: StateFlow<GeoCoordinates?> = _location.asStateFlow()
 
+    private val _isCurrentUserOwner = MutableStateFlow(false)
+    val isCurrentUserOwner: StateFlow<Boolean> = _isCurrentUserOwner.asStateFlow()
+
+    val currentUserId: StateFlow<String?> = authManager.currentUserId
 
     fun setTopicId(id: String, editMode: Boolean = false) {
-        // Если это новый топик
         if (id == "new") {
             currentTopicId = null
             _isEditMode.value = true
@@ -71,10 +73,10 @@ class TopicDetailViewModel @Inject constructor(
             _editableTitle.value = ""
             _editableContent.value = ""
             _topicDetailState.value = null
+            _isCurrentUserOwner.value = true
             return
         }
 
-        // Если ID не изменился, ничего не делаем
         if (id == currentTopicId && _isEditMode.value == editMode) {
             return
         }
@@ -92,11 +94,12 @@ class TopicDetailViewModel @Inject constructor(
     }
 
     fun toggleEditMode() {
-        _isEditMode.value = !_isEditMode.value
-        // Если перешли в режим редактирования, заполняем поля текущими данными
-        if (_isEditMode.value) {
-            _editableTitle.value = _topicDetailState.value?.topicWithComments?.topic?.title ?: ""
-            _editableContent.value = _topicDetailState.value?.topicWithComments?.topic?.content ?: ""
+        if (_isCurrentUserOwner.value) {
+            _isEditMode.value = !_isEditMode.value
+            if (_isEditMode.value) {
+                _editableTitle.value = _topicDetailState.value?.topicWithComments?.topic?.title ?: ""
+                _editableContent.value = _topicDetailState.value?.topicWithComments?.topic?.content ?: ""
+            }
         }
     }
 
@@ -117,7 +120,7 @@ class TopicDetailViewModel @Inject constructor(
             _errorMessage.value = null
 
             try {
-                if (currentTopicId == null) { // Создание нового топика
+                if (currentTopicId == null) {
                     if (_location.value == null) {
                         _errorMessage.value = "Для создания топика требуется доступ к местоположению."
                         _isSaving.value = false
@@ -132,14 +135,17 @@ class TopicDetailViewModel @Inject constructor(
                     val newTopicId = forumRepository.createTopic(topic)
                     onTopicSaved(newTopicId)
 
-                } else { // Обновление существующего топика
-                    val originalTopic = _topicDetailState.value!!.topicWithComments.topic
-                    val updatedTopic = originalTopic.copy(
-                        // Заголовок не меняем, если топик не новый
-                        content = _editableContent.value
-                    )
-                    forumRepository.updateTopicContent(updatedTopic.id, updatedTopic.content) // Предполагается наличие такого метода
-                    onTopicSaved(updatedTopic.id)
+                } else {
+                    if (_isCurrentUserOwner.value) {
+                        val originalTopic = _topicDetailState.value!!.topicWithComments.topic
+                        val updatedTopic = originalTopic.copy(
+                            content = _editableContent.value
+                        )
+                        forumRepository.updateTopicContent(updatedTopic.id, updatedTopic.content)
+                        onTopicSaved(updatedTopic.id)
+                    } else {
+                        _errorMessage.value = "У вас нет прав для редактирования этого топика."
+                    }
                 }
                 _isSaving.value = false
                 _isEditMode.value = false
@@ -147,6 +153,19 @@ class TopicDetailViewModel @Inject constructor(
             } catch (e: Exception) {
                 _isSaving.value = false
                 _errorMessage.value = "Не удалось сохранить топик: ${e.message}"
+            }
+        }
+    }
+
+    fun deleteTopic(onTopicDeleted: () -> Unit) {
+        viewModelScope.launch {
+            if (currentTopicId != null && _isCurrentUserOwner.value) {
+                try {
+                    forumRepository.deleteTopic(currentTopicId!!)
+                    onTopicDeleted()
+                } catch (e: Exception) {
+                    _errorMessage.value = "Ошибка удаления топика: ${e.message}"
+                }
             }
         }
     }
@@ -163,6 +182,7 @@ class TopicDetailViewModel @Inject constructor(
                     val authorToShow = author ?: User(id = topicWithComments.topic.userId, username = "Unknown")
 
                     _topicDetailState.value = TopicDetailState(topicWithComments, authorToShow)
+                    _isCurrentUserOwner.value = authManager.currentUserId.value == topicWithComments.topic.userId
                     if (_isEditMode.value) {
                         _editableTitle.value = topicWithComments.topic.title
                         _editableContent.value = topicWithComments.topic.content
@@ -209,9 +229,23 @@ class TopicDetailViewModel @Inject constructor(
                             _showCommentInput.value = false
                         }
                     } catch (e: Exception) {
-                        // Обработка ошибки
                     }
                 }
+            }
+        }
+    }
+
+    fun deleteComment(commentId: String) {
+        viewModelScope.launch {
+            try {
+                val commentToDelete = _topicDetailState.value?.topicWithComments?.comments?.find { it.id == commentId }
+                // Дополнительная проверка, что пользователь является владельцем
+                if (commentToDelete?.userId == authManager.currentUserId.value) {
+                    forumRepository.deleteComment(commentId)
+                    // UI обновится автоматически благодаря real-time listener'у
+                }
+            } catch (e: Exception) {
+                _errorMessage.value = "Ошибка удаления комментария: ${e.message}"
             }
         }
     }

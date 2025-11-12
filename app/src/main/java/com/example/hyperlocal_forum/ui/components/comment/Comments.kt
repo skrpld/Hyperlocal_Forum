@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -30,9 +31,11 @@ fun Comments(
     comments: List<Comment>,
     showCommentInput: Boolean,
     newCommentContent: String,
+    currentUserId: String?,
     onCommentContentChange: (String) -> Unit,
     onSaveComment: () -> Unit,
-    onToggleCommentInput: () -> Unit
+    onToggleCommentInput: () -> Unit,
+    onDeleteComment: (String) -> Unit
 ) {
     Column(modifier = modifier) {
         Text(
@@ -51,10 +54,26 @@ fun Comments(
                         .fillMaxWidth()
                         .padding(start = 8.dp, end = 8.dp, bottom = 8.dp)
                 ) {
-                    Text(
-                        text = "${comment.username}: ${comment.content}",
-                        modifier = Modifier.padding(8.dp)
-                    )
+                    Row(
+                        modifier = Modifier.padding(start = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "${comment.username}: ${comment.content}",
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(vertical = 12.dp)
+                        )
+                        // Показываем кнопку удаления только владельцу комментария
+                        if (comment.userId == currentUserId) {
+                            IconButton(onClick = { onDeleteComment(comment.id) }) {
+                                Icon(
+                                    Icons.Default.Delete,
+                                    contentDescription = "Delete comment"
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -70,7 +89,9 @@ fun Comments(
                     value = newCommentContent,
                     onValueChange = onCommentContentChange,
                     label = { Text("Your comment") },
-                    modifier = Modifier.weight(1f).padding(end = 8.dp)
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 8.dp)
                 )
                 IconButton(onClick = onSaveComment) {
                     Icon(Icons.Default.Send, contentDescription = "Send Comment")
@@ -79,7 +100,9 @@ fun Comments(
         } else {
             Button(
                 onClick = onToggleCommentInput,
-                modifier = Modifier.fillMaxWidth().padding(8.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Add Comment")
                 Text("Add Comment")

@@ -74,7 +74,8 @@ fun ForumNavGraph(
                     onTopicSaved = { savedTopicId ->
                         navController.popBackStack()
                         navActions.navigateToTopic(savedTopicId)
-                    }
+                    },
+                    onTopicDeleted = { navController.navigateUp() }
                 )
             }
         }
