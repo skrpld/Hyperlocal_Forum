@@ -16,6 +16,12 @@ object GeoUtils {
         .withIndex()
         .associate { it.value to it.index }
 
+    /**
+     * Calculates the distance between two geographical points using the Haversine formula.
+     * @param start The starting coordinates.
+     * @param end The ending coordinates.
+     * @return The distance in kilometers.
+     */
     fun distanceBetween(start: GeoCoordinates, end: GeoCoordinates): Double {
         val dLat = Math.toRadians(end.latitude - start.latitude)
         val dLon = Math.toRadians(end.longitude - start.longitude)
@@ -27,6 +33,12 @@ object GeoUtils {
         return EARTH_RADIUS_KM * c
     }
 
+    /**
+     * Encodes geographical coordinates into a GeoHash string.
+     * @param location The coordinates to encode.
+     * @param precision The desired length of the GeoHash string. Defaults to 9.
+     * @return The resulting GeoHash string.
+     */
     fun getGeoHashForLocation(location: GeoCoordinates, precision: Int = 9): String {
         var latRange = doubleArrayOf(-90.0, 90.0)
         var lonRange = doubleArrayOf(-180.0, 180.0)
@@ -68,6 +80,12 @@ object GeoUtils {
         return geohash.toString()
     }
 
+    /**
+     * Calculates the central GeoHash and its 8 neighbors for a given location and radius.
+     * @param location The central coordinates.
+     * @param radiusKm The radius to determine the GeoHash precision.
+     * @return A list of 9 GeoHash strings (center + 8 neighbors).
+     */
     fun getNearbyGeoHashes(location: GeoCoordinates, radiusKm: Double): List<String> {
         val precision = getPrecisionForRadius(radiusKm)
         val centerHash = getGeoHashForLocation(location, precision)
@@ -93,6 +111,11 @@ object GeoUtils {
         return neighbors.toList()
     }
 
+    /**
+     * Decodes a GeoHash string back into geographical coordinates.
+     * @param geohash The GeoHash string to decode.
+     * @return The decoded coordinates.
+     */
     private fun decodeGeoHash(geohash: String): GeoCoordinates {
         var latRange = doubleArrayOf(-90.0, 90.0)
         var lonRange = doubleArrayOf(-180.0, 180.0)
@@ -122,17 +145,9 @@ object GeoUtils {
     }
 
     /**
-     * Определяет оптимальную точность (длину) геохеша на основе радиуса поиска.
-     *
-     * Чем больше радиус, тем ниже должна быть точность (короче строка геохеша),
-     * чтобы охватить большую площадь. Мы выбираем точность так, чтобы размеры
-     * ячейки геохеша были сопоставимы с искомым радиусом.
-     *
-     * Размеры ячеек геохеша (приблизительные):
-     * - precision 6: ~1.2км x 600м
-     * - precision 5: ~4.9км x 4.9км
-     * - precision 4: ~39км x 19.5км
-     * - precision 3: ~156км x 156км
+     * Determines the appropriate GeoHash precision level based on a given radius.
+     * @param radiusKm The search radius in kilometers.
+     * @return An integer representing the GeoHash length (precision).
      */
     fun getPrecisionForRadius(radiusKm: Double): Int {
         return when {

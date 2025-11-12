@@ -35,6 +35,10 @@ class ForumRepository(
     private val commentsCollection = db.collection("comments")
     private val usersCollection = db.collection("users")
 
+    /**
+     * Checks if the Firestore server is reachable.
+     * @return True if a connection to a specific document can be made, false otherwise.
+     */
     suspend fun checkServerAvailability(): Boolean {
         return try {
             db.collection("connectivity_check").document("one").get().await()
@@ -44,6 +48,12 @@ class ForumRepository(
         }
     }
 
+    /**
+     * Creates a new topic in Firestore and saves a copy to the local database.
+     * It generates geohashes for the topic's location to enable geospatial queries.
+     * @param topic The topic object to be created.
+     * @return The ID of the newly created topic document in Firestore.
+     */
     suspend fun createTopic(topic: Topic): String {
         val fullGeohash = GeoUtils.getGeoHashForLocation(topic.location, 9)
 
@@ -78,6 +88,11 @@ class ForumRepository(
         return document.id
     }
 
+    /**
+     * Updates the content of a specific topic in Firestore.
+     * @param topicId The ID of the topic to update.
+     * @param newContent The new content string for the topic.
+     */
     suspend fun updateTopicContent(topicId: String, newContent: String) {
         try {
             val topicData = mapOf(
@@ -90,6 +105,10 @@ class ForumRepository(
         }
     }
 
+    /**
+     * Deletes a topic and all its associated comments from Firestore and the local database.
+     * @param topicId The ID of the topic to delete.
+     */
     suspend fun deleteTopic(topicId: String) {
         try {
             val commentsQuery = commentsCollection.whereEqualTo("topicId", topicId).get().await()
@@ -107,6 +126,11 @@ class ForumRepository(
     }
 
 
+    /**
+     * Retrieves all topics from Firestore, ordered by timestamp.
+     * If there's a network error, it falls back to the local database cache.
+     * @return A Flow emitting a list of all Topic objects.
+     */
     fun getAllTopics(): Flow<List<Topic>> = flow {
         try {
             val snapshot = topicsCollection
@@ -146,6 +170,13 @@ class ForumRepository(
         }
     }
 
+    /**
+     * Finds topics within a specified radius of a user's location using geohash queries.
+     * It falls back to the local cache if Firestore is unavailable.
+     * @param userLocation The user's current geographical coordinates.
+     * @param radiusInKm The search radius in kilometers.
+     * @return A Flow emitting a list of nearby Topic objects.
+     */
     fun findNearbyTopics(userLocation: GeoCoordinates, radiusInKm: Double = 1.0): Flow<List<Topic>> = flow {
         try {
             val precision = GeoUtils.getPrecisionForRadius(radiusInKm)
@@ -214,6 +245,11 @@ class ForumRepository(
         }
     }
 
+    /**
+     * Adds a new comment to Firestore and the local database.
+     * @param comment The comment object to be added.
+     * @return The ID of the newly created comment document.
+     */
     suspend fun addComment(comment: Comment): String {
         val commentData = hashMapOf(
             "userId" to comment.userId,
@@ -238,6 +274,12 @@ class ForumRepository(
         return document.id
     }
 
+    /**
+     * Listens for real-time updates to the comments for a specific topic.
+     * Falls back to the local cache if there's a network error.
+     * @param topicId The ID of the topic to get comments for.
+     * @return A Flow emitting a list of Comment objects, which updates in real-time.
+     */
     fun getCommentsForTopic(topicId: String): Flow<List<Comment>> = callbackFlow {
         val listener = try {
             commentsCollection
@@ -286,6 +328,10 @@ class ForumRepository(
         emit(localComments)
     }
 
+    /**
+     * Deletes a specific comment from Firestore and the local cache.
+     * @param commentId The ID of the comment to delete.
+     */
     suspend fun deleteComment(commentId: String) {
         try {
             commentsCollection.document(commentId).delete().await()
@@ -296,6 +342,12 @@ class ForumRepository(
         }
     }
 
+    /**
+     * Retrieves a single topic along with all of its comments.
+     * Falls back to the local cache if Firestore is unavailable.
+     * @param topicId The ID of the topic to retrieve.
+     * @return A Flow emitting a TopicWithComments object.
+     */
     fun getTopicWithComments(topicId: String): Flow<TopicWithComments> = flow {
         try {
             val topicDoc = topicsCollection.document(topicId).get().await()
@@ -352,6 +404,11 @@ class ForumRepository(
         }
     }
 
+    /**
+     * Creates a new user document in Firestore and a corresponding entry in the local database.
+     * @param user The User object to create.
+     * @return The ID of the newly created user.
+     */
     suspend fun createUser(user: User): String {
         val userData = hashMapOf(
             "username" to user.username,
@@ -378,6 +435,12 @@ class ForumRepository(
         return userId
     }
 
+    /**
+     * Retrieves a single user's data from Firestore by their ID.
+     * Falls back to the local cache if Firestore is unavailable.
+     * @param userId The ID of the user to retrieve.
+     * @return A User object if found, otherwise null.
+     */
     suspend fun getUser(userId: String): User? {
         try {
             val snapshot = usersCollection.document(userId).get().await()
@@ -408,6 +471,12 @@ class ForumRepository(
         }
     }
 
+    /**
+     * Retrieves multiple user documents from Firestore based on a list of user IDs.
+     * This is more efficient than fetching them one by one.
+     * @param userIds A list of user IDs to fetch.
+     * @return A map where keys are user IDs and values are User objects.
+     */
     suspend fun getUsers(userIds: List<String>): Map<String, User> {
         if (userIds.isEmpty()) {
             return emptyMap()
@@ -438,6 +507,12 @@ class ForumRepository(
         return usersMap
     }
 
+    /**
+     * Retrieves a single user's data from Firestore by their username.
+     * Falls back to the local cache if Firestore is unavailable.
+     * @param username The username of the user to retrieve.
+     * @return A User object if found, otherwise null.
+     */
     suspend fun getUserByUsername(username: String): User? {
         try {
             val snapshot = usersCollection
@@ -471,6 +546,11 @@ class ForumRepository(
         }
     }
 
+    /**
+     * Updates a user's data in Firestore and the local database.
+     * @param user The User object with updated information.
+     * @return True if the update was successful, false otherwise.
+     */
     suspend fun updateUser(user: User): Boolean {
         return try {
             val userData = hashMapOf(
@@ -497,6 +577,13 @@ class ForumRepository(
         }
     }
 
+    /**
+     * Updates the password for the currently authenticated Firebase user.
+     * Note: This is a sensitive operation and may require recent user sign-in.
+     * @param userId The ID of the user (used for consistency, but operation targets current user).
+     * @param newPassword The new password to set.
+     * @return True if the password update was successful, false otherwise.
+     */
     suspend fun updatePassword(userId: String, newPassword: String):Boolean {
         return try {
             FirebaseAuth.getInstance().currentUser?.updatePassword(newPassword)?.await()

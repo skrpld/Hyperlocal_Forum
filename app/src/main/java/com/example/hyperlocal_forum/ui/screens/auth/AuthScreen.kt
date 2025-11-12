@@ -64,7 +64,6 @@ fun AuthScreen(
                         modifier = Modifier.padding(16.dp)
                     ) {
 
-                        // Поле Username отображается только при регистрации
                         if (!isLoginMode) {
                             OutlinedTextField(
                                 value = username,
@@ -76,11 +75,9 @@ fun AuthScreen(
                             Spacer(modifier = Modifier.height(8.dp))
                         }
 
-                        // Поле Email отображается всегда
                         OutlinedTextField(
                             value = email,
-                            // --- ИСПРАВЛЕНИЕ ЗДЕСЬ ---
-                            onValueChange = { viewModel.onEmailChange(it) }, // Было onValuechange
+                            onValueChange = { viewModel.onEmailChange(it) },
                             label = { Text("Email") },
                             modifier = Modifier.fillMaxWidth().testTag("AuthScreen_Email"),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),

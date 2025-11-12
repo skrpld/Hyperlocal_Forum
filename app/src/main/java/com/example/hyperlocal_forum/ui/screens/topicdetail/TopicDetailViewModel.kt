@@ -65,6 +65,13 @@ class TopicDetailViewModel @Inject constructor(
 
     val currentUserId: StateFlow<String?> = authManager.currentUserId
 
+    /**
+     * Sets the topic ID to be displayed and loads its details.
+     * If the ID is "new", it prepares the ViewModel for creating a new topic.
+     * Prevents reloading if the same topic ID and edit mode are provided again.
+     * @param id The ID of the topic to load, or "new" to create a new one.
+     * @param editMode Whether to start in edit mode. Defaults to false.
+     */
     fun setTopicId(id: String, editMode: Boolean = false) {
         if (id == "new") {
             currentTopicId = null
@@ -85,14 +92,26 @@ class TopicDetailViewModel @Inject constructor(
         loadTopicDetail(id)
     }
 
+    /**
+     * Updates the editable title state.
+     * @param newTitle The new title string.
+     */
     fun onTitleChange(newTitle: String) {
         _editableTitle.value = newTitle
     }
 
+    /**
+     * Updates the editable content state.
+     * @param newContent The new content string.
+     */
     fun onContentChange(newContent: String) {
         _editableContent.value = newContent
     }
 
+    /**
+     * Toggles the edit mode for the topic if the current user is the owner.
+     * When entering edit mode, it populates the editable fields with the current topic data.
+     */
     fun toggleEditMode() {
         if (_isCurrentUserOwner.value) {
             _isEditMode.value = !_isEditMode.value
@@ -103,16 +122,22 @@ class TopicDetailViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Saves a new or existing topic.
+     * Validates user authentication and input fields.
+     * Creates a new topic if `currentTopicId` is null, otherwise updates the existing one.
+     * @param onTopicSaved A callback function that receives the saved topic's ID.
+     */
     fun saveTopic(onTopicSaved: (String) -> Unit) {
         viewModelScope.launch {
             val userId = authManager.currentUserId.value
             if (userId.isNullOrBlank()) {
-                _errorMessage.value = "Вы должны быть авторизованы, чтобы создавать или редактировать топики."
+                _errorMessage.value = "You must be logged in to create or edit topics."
                 return@launch
             }
 
             if (_editableTitle.value.isBlank() || _editableContent.value.isBlank()) {
-                _errorMessage.value = "Заголовок и содержимое не могут быть пустыми"
+                _errorMessage.value = "Title and content cannot be empty"
                 return@launch
             }
 
@@ -122,7 +147,7 @@ class TopicDetailViewModel @Inject constructor(
             try {
                 if (currentTopicId == null) {
                     if (_location.value == null) {
-                        _errorMessage.value = "Для создания топика требуется доступ к местоположению."
+                        _errorMessage.value = "Location access is required to create a topic."
                         _isSaving.value = false
                         return@launch
                     }
@@ -144,7 +169,7 @@ class TopicDetailViewModel @Inject constructor(
                         forumRepository.updateTopicContent(updatedTopic.id, updatedTopic.content)
                         onTopicSaved(updatedTopic.id)
                     } else {
-                        _errorMessage.value = "У вас нет прав для редактирования этого топика."
+                        _errorMessage.value = "You do not have permission to edit this topic."
                     }
                 }
                 _isSaving.value = false
@@ -152,11 +177,15 @@ class TopicDetailViewModel @Inject constructor(
 
             } catch (e: Exception) {
                 _isSaving.value = false
-                _errorMessage.value = "Не удалось сохранить топик: ${e.message}"
+                _errorMessage.value = "Failed to save topic: ${e.message}"
             }
         }
     }
 
+    /**
+     * Deletes the current topic if the user is the owner.
+     * @param onTopicDeleted A callback function to be executed after deletion.
+     */
     fun deleteTopic(onTopicDeleted: () -> Unit) {
         viewModelScope.launch {
             if (currentTopicId != null && _isCurrentUserOwner.value) {
@@ -164,13 +193,17 @@ class TopicDetailViewModel @Inject constructor(
                     forumRepository.deleteTopic(currentTopicId!!)
                     onTopicDeleted()
                 } catch (e: Exception) {
-                    _errorMessage.value = "Ошибка удаления топика: ${e.message}"
+                    _errorMessage.value = "Error deleting topic: ${e.message}"
                 }
             }
         }
     }
 
-
+    /**
+     * Loads the details for a given topic ID, including its content, author, and comments.
+     * Updates the UI state with the fetched data.
+     * @param topicId The ID of the topic to load.
+     */
     private fun loadTopicDetail(topicId: String) {
         viewModelScope.launch {
             _isLoading.value = true
@@ -196,6 +229,10 @@ class TopicDetailViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Toggles the visibility of the new comment input field.
+     * Clears the input field when it's hidden.
+     */
     fun toggleCommentInput() {
         _showCommentInput.value = !_showCommentInput.value
         if (!_showCommentInput.value) {
@@ -203,10 +240,18 @@ class TopicDetailViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Updates the state for the new comment's content.
+     * @param content The new content string for the comment.
+     */
     fun onNewCommentContentChange(content: String) {
         _newCommentContent.value = content
     }
 
+    /**
+     * Saves a new comment to the current topic.
+     * It requires the user to be logged in and the comment content to be non-blank.
+     */
     fun saveComment() {
         val topicId = currentTopicId ?: return
 
@@ -229,27 +274,35 @@ class TopicDetailViewModel @Inject constructor(
                             _showCommentInput.value = false
                         }
                     } catch (e: Exception) {
+                        // Handle error
                     }
                 }
             }
         }
     }
 
+    /**
+     * Deletes a comment if the current user is the author of the comment.
+     * @param commentId The ID of the comment to delete.
+     */
     fun deleteComment(commentId: String) {
         viewModelScope.launch {
             try {
                 val commentToDelete = _topicDetailState.value?.topicWithComments?.comments?.find { it.id == commentId }
-                // Дополнительная проверка, что пользователь является владельцем
                 if (commentToDelete?.userId == authManager.currentUserId.value) {
                     forumRepository.deleteComment(commentId)
-                    // UI обновится автоматически благодаря real-time listener'у
                 }
             } catch (e: Exception) {
-                _errorMessage.value = "Ошибка удаления комментария: ${e.message}"
+                _errorMessage.value = "Error deleting comment: ${e.message}"
             }
         }
     }
 
+    /**
+     * Sets the geographical location coordinates.
+     * @param lat The latitude.
+     * @param lon The longitude.
+     */
     fun setLocation(lat: Double, lon: Double) {
         _location.value = GeoCoordinates(lat, lon)
     }

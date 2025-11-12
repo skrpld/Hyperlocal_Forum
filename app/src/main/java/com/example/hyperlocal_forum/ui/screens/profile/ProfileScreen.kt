@@ -24,7 +24,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 
@@ -33,7 +32,6 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 fun ProfileScreen(
     modifier: Modifier = Modifier,
     viewModel: ProfileViewModel = hiltViewModel(),
-    onBack: () -> Unit = {},
     onLogout: () -> Unit = {}
 ) {
     val user by viewModel.user.collectAsState()
@@ -99,10 +97,4 @@ fun ProfileScreen(
             }
         }
     }
-}
-
-@Preview
-@Composable
-fun ProfileScreenPreview() {
-    ProfileScreen()
 }

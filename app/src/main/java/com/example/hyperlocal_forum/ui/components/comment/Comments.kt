@@ -64,7 +64,6 @@ fun Comments(
                                 .weight(1f)
                                 .padding(vertical = 12.dp)
                         )
-                        // Показываем кнопку удаления только владельцу комментария
                         if (comment.userId == currentUserId) {
                             IconButton(onClick = { onDeleteComment(comment.id) }) {
                                 Icon(

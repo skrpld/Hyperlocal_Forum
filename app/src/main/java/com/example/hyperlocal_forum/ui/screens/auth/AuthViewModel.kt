@@ -40,32 +40,64 @@ class AuthViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    /**
+     * Updates the username state with the new value.
+     * @param newUsername The new username string entered by the user.
+     */
     fun onUsernameChange(newUsername: String) {
         _username.value = newUsername
     }
 
+    /**
+     * Updates the email state with the new value.
+     * @param newEmail The new email string entered by the user.
+     */
     fun onEmailChange(newEmail: String) {
         _email.value = newEmail
     }
 
+    /**
+     * Updates the password state with the new value.
+     * @param newPassword The new password string entered by the user.
+     */
     fun onPasswordChange(newPassword: String) {
         _password.value = newPassword
     }
 
+    /**
+     * Updates the confirm password state with the new value.
+     * @param newConfirmPassword The new confirmation password string entered by the user.
+     */
     fun onConfirmPasswordChange(newConfirmPassword: String) {
         _confirmPassword.value = newConfirmPassword
     }
 
+    /**
+     * Toggles the authentication mode between login and registration.
+     * Also clears any existing authentication messages.
+     */
     fun toggleLoginMode() {
         _isLoginMode.value = !_isLoginMode.value
         _authMessage.value = null
     }
 
+    /**
+     * Validates an email string against a regex pattern.
+     * @param email The email string to validate.
+     * @return True if the email is valid, false otherwise.
+     */
     private fun isEmailValid(email: String): Boolean {
         val emailRegex = Regex("^[\\S]+@[a-zA-Z0-9-]+\\.[a-zA-Z]{2,}\$")
         return emailRegex.matches(email)
     }
 
+    /**
+     * Handles the user authentication process (login or registration).
+     * It performs validation, calls the appropriate authentication manager method,
+     * and updates the UI state based on the result.
+     * If registration is successful, it also creates a new user in the repository.
+     * @param onLoginSuccess A callback function to be executed upon successful authentication.
+     */
     fun authenticate(onLoginSuccess: () -> Unit) {
         if (!isEmailValid(_email.value)) {
             _authMessage.value = "Please enter a valid email address"
@@ -113,6 +145,9 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Clears the current authentication message.
+     */
     fun clearMessage() {
         _authMessage.value = null
     }

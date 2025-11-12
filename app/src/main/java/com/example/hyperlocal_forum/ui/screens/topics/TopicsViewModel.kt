@@ -49,6 +49,9 @@ class TopicsViewModel @Inject constructor(
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
+    /**
+     * Loads all topics from the repository and updates the UI state.
+     */
     private fun loadTopics() {
         viewModelScope.launch {
             _isLoading.value = true
@@ -67,6 +70,10 @@ class TopicsViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Loads topics that are geographically near the user's current location
+     * within the specified search radius.
+     */
     private fun loadNearbyTopics() {
         _userLocation.value?.let { location ->
             viewModelScope.launch {
@@ -91,6 +98,11 @@ class TopicsViewModel @Inject constructor(
     }
 
 
+    /**
+     * Fetches user data for all unique user IDs present in the list of topics
+     * and updates the users map state.
+     * @param topics The list of topics from which to extract user IDs.
+     */
     private suspend fun updateUsersMap(topics: List<Topic>) {
         if (topics.isEmpty()) {
             _usersMap.value = emptyMap()
@@ -100,6 +112,9 @@ class TopicsViewModel @Inject constructor(
         _usersMap.value = forumRepository.getUsers(userIds)
     }
 
+    /**
+     * Switches the view to show all topics and triggers a refresh.
+     */
     fun loadAllTopics() {
         if (_showNearbyOnly.value) {
             _showNearbyOnly.value = false
@@ -107,12 +122,20 @@ class TopicsViewModel @Inject constructor(
         refreshTopics()
     }
 
+    /**
+     * Switches the view to filter topics to only those nearby and triggers a refresh.
+     */
     fun switchToNearbyFilter() {
         Log.d(TAG, "Switching to nearby filter...")
         _showNearbyOnly.value = true
         refreshTopics()
     }
 
+    /**
+     * Sets the search radius for nearby topics.
+     * If the view is currently showing nearby topics, it triggers a refresh.
+     * @param radius The search radius in kilometers.
+     */
     fun setSearchRadius(radius: Double) {
         if (_searchRadius.value != radius) {
             _searchRadius.value = radius
@@ -122,6 +145,10 @@ class TopicsViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Fetches the user's last known location using the FusedLocationProviderClient.
+     * If successful and the view is in nearby mode, it reloads the topics based on the new location.
+     */
     @SuppressLint("MissingPermission")
     fun updateUserLocation() {
         if (_showNearbyOnly.value) {
@@ -147,6 +174,10 @@ class TopicsViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Refreshes the list of topics based on the current filter (all or nearby).
+     * It also checks for network connectivity and server availability.
+     */
     fun refreshTopics() {
         viewModelScope.launch {
             _isLoading.value = true

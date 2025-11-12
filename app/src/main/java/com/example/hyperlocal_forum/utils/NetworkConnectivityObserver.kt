@@ -24,6 +24,12 @@ class NetworkConnectivityObserver(
     private val connectivityManager =
         context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
+    /**
+     * Observes network connectivity changes and emits the current status.
+     * It uses a callbackFlow to register a NetworkCallback with the ConnectivityManager
+     * and sends status updates as they occur.
+     * @return A Flow that emits ConnectivityObserver.Status updates.
+     */
     override fun observe(): Flow<ConnectivityObserver.Status> {
         return callbackFlow {
             val callback = object : ConnectivityManager.NetworkCallback() {

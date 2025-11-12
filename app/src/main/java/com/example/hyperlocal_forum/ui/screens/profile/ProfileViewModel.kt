@@ -28,12 +28,17 @@ class ProfileViewModel @Inject constructor(
 
     init {
         authManager.currentUserId.onEach { userId ->
-            userId?.let { 
+            userId?.let {
                 loadUser(it)
             }
         }.launchIn(viewModelScope)
     }
 
+    /**
+     * Loads the user data for the given user ID from the repository.
+     * Updates the user state and loading state.
+     * @param userId The unique identifier of the user to load.
+     */
     private fun loadUser(userId: String) {
         viewModelScope.launch {
             _isLoading.value = true
@@ -42,13 +47,20 @@ class ProfileViewModel @Inject constructor(
                     _user.value = user
                 }
             } catch (e: Exception) {
-                // Handle error
+                // Handle error, e.g., show a message
             } finally {
                 _isLoading.value = false
             }
         }
     }
 
+    /**
+     * Saves changes to the user's profile, including username and password.
+     * If the username has changed, it updates the user object in the repository.
+     * If a new password is provided, it updates the user's password.
+     * @param username The new username for the user.
+     * @param newPassword The new password. If empty, the password is not changed.
+     */
     fun onSaveChanges(username: String, newPassword: String) {
         viewModelScope.launch {
             _user.value?.let { currentUser ->
@@ -74,6 +86,11 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Logs out the current user.
+     * Clears the user state and triggers a callback function.
+     * @param onLogout A callback function to be executed after the user has been logged out.
+     */
     fun logout(onLogout: () -> Unit) {
         authManager.logout()
         _user.value = null
