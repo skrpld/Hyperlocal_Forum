@@ -185,14 +185,18 @@ class TopicsViewModel @Inject constructor(
             val networkStatus = connectivityObserver.observe().first()
             if (networkStatus == ConnectivityObserver.Status.Unavailable || networkStatus == ConnectivityObserver.Status.Lost) {
                 _errorMessage.value = "No internet connection."
-            } else {
-                val isServerAvailable = forumRepository.checkServerAvailability()
-                if (!isServerAvailable) {
-                    _errorMessage.value = "Server is unavailable"
-                } else {
-                    _errorMessage.value = null
-                }
+                _isLoading.value = false
+                return@launch
             }
+
+            val isServerAvailable = forumRepository.checkServerAvailability()
+            if (!isServerAvailable) {
+                _errorMessage.value = "Server is unavailable"
+                _isLoading.value = false
+                return@launch
+            }
+
+            _errorMessage.value = null
 
             if (_showNearbyOnly.value) {
                 updateUserLocation()
