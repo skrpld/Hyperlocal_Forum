@@ -20,6 +20,7 @@ hiltNavigationComposeVersion = "1.1.0"
 kotlin = "2.0.0"
 kotlinxCoroutinesPlayServices = "1.10.2"
 kotlinxCoroutinesTest = "1.10.2"
+kotlinxCoroutinesTestVersion = "1.7.3"
 ksp = "2.0.0-1.0.21"
 coreKtx = "1.17.0"
 junit = "4.13.2"
@@ -32,6 +33,7 @@ mockitoAndroid = "5.20.0"
 mockitoCore = "5.20.0"
 mockitoKotlin = "6.1.0"
 mockitoKotlinVersion = "5.1.0"
+mockk = "1.14.6"
 navigationRuntimeKtx = "2.9.5"
 navigationCompose = "2.9.5"
 playServicesAuth = "21.4.0"
@@ -47,6 +49,9 @@ googleGmsGoogleServices = "4.4.4"
 googleFirebaseCrashlytics = "3.0.6"
 roomKtx = "2.8.3"
 playServicesLocation = "21.3.0"
+truth = "1.4.5"
+turbine = "1.2.1"
+turbineVersion = "0.12.1"
 
 [libraries]
 accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanistPermissions" }
@@ -96,10 +101,12 @@ androidx-room-compiler = { group = "androidx.room", name = "room-compiler", vers
 firebase-crashlytics = { group = "com.google.firebase", name = "firebase-crashlytics", version.ref = "firebaseCrashlytics" }
 kotlinx-coroutines-play-services = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "kotlinxCoroutinesPlayServices" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutinesTest" }
+kotlinx-coroutines-test-v173 = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutinesTestVersion" }
 mockito-android = { module = "org.mockito:mockito-android", version.ref = "mockitoAndroid" }
 mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockitoCore" }
 mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockitoKotlin" }
 mockito-kotlin-v510 = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockitoKotlinVersion" }
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 play-services-auth = { module = "com.google.android.gms:play-services-auth", version.ref = "playServicesAuth" }
 play-services-auth-v2070 = { module = "com.google.android.gms:play-services-auth", version.ref = "playServicesAuthVersion" }
 play-services-base = { module = "com.google.android.gms:play-services-base", version.ref = "playServicesBase" }
@@ -108,6 +115,9 @@ play-services-identity = { module = "com.google.android.gms:play-services-identi
 play-services-location-v2120 = { module = "com.google.android.gms:play-services-location", version.ref = "playServicesLocationVersion" }
 room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "roomKtx" }
 play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
+truth = { module = "com.google.truth:truth", version.ref = "truth" }
+turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
+turbine-v0121 = { module = "app.cash.turbine:turbine", version.ref = "turbineVersion" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
