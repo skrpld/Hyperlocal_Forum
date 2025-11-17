@@ -53,9 +53,8 @@ class TopicsViewModelTest {
         mockkStatic(Log::class)
         every { Log.d(any(), any()) } returns 0
         every { Log.e(any(), any(), any()) } returns 0
-        // **ИСПРАВЛЕНИЕ: Добавляем мок для Log.w(String, String)**
         every { Log.w(any<String>(), any<String>()) } returns 0
-        every { Log.w(any<String>(), any<Throwable>()) } returns 0 // На всякий случай для других перегрузок
+        every { Log.w(any<String>(), any<Throwable>()) } returns 0
 
 
         every { mockLocation.latitude } returns 55.7558
